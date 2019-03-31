@@ -101,32 +101,32 @@ namespace egret.sys {
         }
 
         public onPrerender(): void {
-            console.log('ObjectRenderer onPrerender');
+            //console.log('ObjectRenderer onPrerender');
         }
 
         public start(): void {
-            console.log('ObjectRenderer start');
+            //console.log('ObjectRenderer start');
         }
 
         public stop(): void {
-            console.log('ObjectRenderer stop');
+            //console.log('ObjectRenderer stop');
             this.flush();
         }
 
         public flush(): void {
-            console.log('ObjectRenderer flush');
+            //console.log('ObjectRenderer flush');
         }
 
         public render(renderNode: RenderNode): void {
-            console.log('ObjectRenderer render = ' + renderNode);
+            //console.log('ObjectRenderer render = ' + renderNode);
         }
 
         public contextChange(gl: WebGLRenderingContext): void {
-            console.log('ObjectRenderer contextChange = ' + gl);
+            //console.log('ObjectRenderer contextChange = ' + gl);
         }
 
         public destroy(): void {
-            console.log('ObjectRenderer destroy');
+            //console.log('ObjectRenderer destroy');
         }
     }
 }

@@ -608,8 +608,8 @@ var egret;
              * @private
              * 能够含有子项的类将子项列表存储在这个属性里。
              */
-            _this.$children = null;
-            _this.$hasChildren = false;
+            _this.$children = [];
+            //$hasChildren: boolean = false;
             _this.$name = "";
             /**
              * @private
@@ -1510,7 +1510,7 @@ var egret;
                     maskedObject.$cacheDirtyUp();
                 }
             }
-            this.$checkAnchorChanged();
+            //this.$checkAnchorChanged();
         };
         Object.defineProperty(DisplayObject.prototype, "anchorOffsetY", {
             /**
@@ -1563,16 +1563,20 @@ var egret;
                     maskedObject.$cacheDirtyUp();
                 }
             }
-            this.$checkAnchorChanged();
+            //this.$checkAnchorChanged()
         };
+        /**
+         * @private
+         * 如果有锚点，标记
+         */
+        //$hasAnchor: boolean;
         DisplayObject.prototype.$checkAnchorChanged = function () {
             //
-            if (this.$anchorOffsetX != 0 || this.$anchorOffsetY != 0) {
-                this.$hasAnchor = true;
-            }
-            else {
-                this.$hasAnchor = false;
-            }
+            // if (this.$anchorOffsetX != 0 || this.$anchorOffsetY != 0) {
+            //     this.$hasAnchor = true;
+            // } else {
+            //     this.$hasAnchor = false;
+            // }
         };
         Object.defineProperty(DisplayObject.prototype, "visible", {
             /**
@@ -4390,9 +4394,9 @@ var egret;
         function DisplayObjectContainer() {
             var _this = _super.call(this) || this;
             _this.$touchChildren = true;
-            _this.$children = [];
-            _this.$hasChildren = true;
+            _this.$children.length = 0;
             return _this;
+            //this.$hasChildren = true;
         }
         Object.defineProperty(DisplayObjectContainer.prototype, "numChildren", {
             /**
@@ -6050,26 +6054,26 @@ var egret;
                 //console.log('ObjectRenderer constructor');
             }
             ObjectRenderer.prototype.onPrerender = function () {
-                console.log('ObjectRenderer onPrerender');
+                //console.log('ObjectRenderer onPrerender');
             };
             ObjectRenderer.prototype.start = function () {
-                console.log('ObjectRenderer start');
+                //console.log('ObjectRenderer start');
             };
             ObjectRenderer.prototype.stop = function () {
-                console.log('ObjectRenderer stop');
+                //console.log('ObjectRenderer stop');
                 this.flush();
             };
             ObjectRenderer.prototype.flush = function () {
-                console.log('ObjectRenderer flush');
+                //console.log('ObjectRenderer flush');
             };
             ObjectRenderer.prototype.render = function (renderNode) {
-                console.log('ObjectRenderer render = ' + renderNode);
+                //console.log('ObjectRenderer render = ' + renderNode);
             };
             ObjectRenderer.prototype.contextChange = function (gl) {
-                console.log('ObjectRenderer contextChange = ' + gl);
+                //console.log('ObjectRenderer contextChange = ' + gl);
             };
             ObjectRenderer.prototype.destroy = function () {
-                console.log('ObjectRenderer destroy');
+                //console.log('ObjectRenderer destroy');
             };
             return ObjectRenderer;
         }());
@@ -14650,32 +14654,32 @@ var egret;
             function BatchRenderer() {
                 var _this = _super.call(this) || this;
                 _this.renderNodes = [];
-                console.log('BatchRenderer constructor');
                 return _this;
+                //console.log('BatchRenderer constructor');
             }
             BatchRenderer.prototype.onPrerender = function () {
-                console.log('BatchRenderer onPrerender');
+                //console.log('BatchRenderer onPrerender');
             };
             BatchRenderer.prototype.start = function () {
-                console.log('BatchRenderer start');
+                //console.log('BatchRenderer start');
             };
             BatchRenderer.prototype.stop = function () {
-                console.log('BatchRenderer stop');
+                //console.log('BatchRenderer stop');
                 this.flush();
             };
             BatchRenderer.prototype.flush = function () {
-                console.log('BatchRenderer flush = ' + this.renderNodes.length);
+                //console.log('BatchRenderer flush = ' + this.renderNodes.length);
                 this.renderNodes.length = 0;
             };
             BatchRenderer.prototype.render = function (renderNode) {
-                console.log('BatchRenderer render = ' + renderNode.type);
+                //console.log('BatchRenderer render = ' + renderNode.type);
                 this.renderNodes.push(renderNode);
             };
             BatchRenderer.prototype.contextChange = function (gl) {
-                console.log('BatchRenderer contextChange = ' + gl);
+                //console.log('BatchRenderer contextChange = ' + gl);
             };
             BatchRenderer.prototype.destroy = function () {
-                console.log('BatchRenderer destroy');
+                //console.log('BatchRenderer destroy');
             };
             return BatchRenderer;
         }(sys.ObjectRenderer));
@@ -16117,10 +16121,10 @@ var egret;
                     else {
                         offsetX2 = offsetX + child.$x;
                         offsetY2 = offsetY + child.$y;
-                        if (child.$hasAnchor) {
-                            offsetX2 -= child.$anchorOffsetX;
-                            offsetY2 -= child.$anchorOffsetY;
-                        }
+                        //if (child.$hasAnchor) {
+                        offsetX2 -= child.$anchorOffsetX;
+                        offsetY2 -= child.$anchorOffsetY;
+                        //}
                     }
                     var tempAlpha = void 0;
                     if (child.$alpha != 1) {

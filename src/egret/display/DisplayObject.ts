@@ -146,9 +146,9 @@ namespace egret {
          * @private
          * 能够含有子项的类将子项列表存储在这个属性里。
          */
-        $children: DisplayObject[] = null;
+        readonly $children: DisplayObject[] = [];
 
-        $hasChildren: boolean = false;
+        //$hasChildren: boolean = false;
 
         private $name: string = "";
 
@@ -1004,7 +1004,7 @@ namespace egret {
                     maskedObject.$cacheDirtyUp();
                 }
             }
-            this.$checkAnchorChanged();
+            //this.$checkAnchorChanged();
         }
 
 
@@ -1060,22 +1060,22 @@ namespace egret {
                     maskedObject.$cacheDirtyUp();
                 }
             }
-            this.$checkAnchorChanged()
+            //this.$checkAnchorChanged()
         }
 
         /**
          * @private
          * 如果有锚点，标记
          */
-        $hasAnchor: boolean;
+        //$hasAnchor: boolean;
 
         private $checkAnchorChanged() {
             //
-            if (this.$anchorOffsetX != 0 || this.$anchorOffsetY != 0) {
-                this.$hasAnchor = true;
-            } else {
-                this.$hasAnchor = false;
-            }
+            // if (this.$anchorOffsetX != 0 || this.$anchorOffsetY != 0) {
+            //     this.$hasAnchor = true;
+            // } else {
+            //     this.$hasAnchor = false;
+            // }
         }
 
         /**

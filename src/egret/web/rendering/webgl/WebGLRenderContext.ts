@@ -237,12 +237,12 @@ namespace egret.web {
         }
 
         public flush(): void {
-            console.log('__________________________flush__________________________');
+            //console.log('__________________________flush__________________________');
             this.currentRenderer.flush();
         }
 
         public reset(): void {
-            console.log('__________________________reset current renderer to empty__________________________');
+            //console.log('__________________________reset current renderer to empty__________________________');
             this.setObjectRenderer(this.emptyRenderer);
         }
 
@@ -260,7 +260,7 @@ namespace egret.web {
                     break;
                 }
                 case sys.RenderNodeType.GroupNode: {
-                    //group do not need objectRender
+                    //GroupNode do not need objectRender
                     break;
                 }
                 case sys.RenderNodeType.MeshNode: {

@@ -67,8 +67,8 @@ namespace egret {
          */
         public constructor() {
             super();
-            this.$children = [];
-            this.$hasChildren = true;
+            this.$children.length = 0;
+            //this.$hasChildren = true;
         }
 
         /**

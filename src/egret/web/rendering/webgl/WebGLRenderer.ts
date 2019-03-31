@@ -155,7 +155,7 @@ namespace egret.web {
                         this.renderParticle(<sys.ParticleNode>node, buffer);
                         break;
                     }
-                    default:{
+                    default: {
                         ///error?
                     }
                 }
@@ -182,26 +182,55 @@ namespace egret.web {
                     this.renderParticle(<sys.ParticleNode>node, buffer);
                 }
                 */
-
+                //restore?
                 buffer.$offsetX = 0;
                 buffer.$offsetY = 0;
             }
             if (needDrawToSurface) {
                 return drawCalls;
             }
-            let children = displayObject.$children;
-            if (displayObject.$hasChildren) {
-                let length = children.length;
-                for (let i = 0; i < length; i++) {
-                    let child = children[i];
-                    let offsetX2;
-                    let offsetY2;
-                    let tempAlpha;
-                    if (child.$alpha != 1) {
+            const children = displayObject.$children;
+            const length = children.length;
+            if (length > 0) {
+                let child: egret.DisplayObject = null;
+                let offsetX2 = 0;
+                let offsetY2 = 0;
+                let tempAlpha = 0;
+                let savedMatrix: Matrix = null;
+                let tempMatrix: Matrix = null;
+                for (let i = 0; i < length; ++i) {
+                    //clear
+                    child = children[i];
+                    offsetX2 = 0;
+                    offsetY2 = 0;
+                    tempAlpha = 0;
+                    savedMatrix = null;
+                    tempMatrix = null;
+                    //
+                    if (child.$alpha !== 1) {
                         tempAlpha = buffer.globalAlpha;
                         buffer.globalAlpha *= child.$alpha;
                     }
-                    let savedMatrix: Matrix;
+                    offsetX2 = offsetX + child.$x;
+                    offsetY2 = offsetY + child.$y;
+                    if (child.$useTranslate) {
+                        //save
+                        tempMatrix = buffer.globalMatrix;
+                        savedMatrix = Matrix.create();
+                        savedMatrix.a = tempMatrix.a;
+                        savedMatrix.b = tempMatrix.b;
+                        savedMatrix.c = tempMatrix.c;
+                        savedMatrix.d = tempMatrix.d;
+                        savedMatrix.tx = tempMatrix.tx;
+                        savedMatrix.ty = tempMatrix.ty;
+                        //
+                        tempMatrix = child.$getMatrix();
+                        buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
+                    }
+                    //
+                    offsetX2 -= child.$anchorOffsetX;
+                    offsetY2 -= child.$anchorOffsetY;
+                    /*old
                     if (child.$useTranslate) {
                         let m = child.$getMatrix();
                         offsetX2 = offsetX + child.$x;
@@ -226,7 +255,26 @@ namespace egret.web {
                             offsetY2 -= child.$anchorOffsetY;
                         }
                     }
-
+                    */
+                    switch (child.$renderMode) {
+                        case RenderMode.DEFAULT: {
+                            drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);
+                            break;
+                        }
+                        case RenderMode.FILTER: {
+                            drawCalls += this.drawWithFilter(child, buffer, offsetX2, offsetY2);
+                            break;
+                        }
+                        case RenderMode.CLIP: {
+                            drawCalls += this.drawWithClip(child, buffer, offsetX2, offsetY2);
+                            break;
+                        }
+                        case RenderMode.SCROLLRECT: {
+                            drawCalls += this.drawWithScrollRect(child, buffer, offsetX2, offsetY2);
+                            break;
+                        }
+                    }
+                    /* old
                     if (child.$renderMode === RenderMode.DEFAULT) {
                         drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);
                     }
@@ -239,19 +287,21 @@ namespace egret.web {
                     else if (child.$renderMode === RenderMode.SCROLLRECT) {
                         drawCalls += this.drawWithScrollRect(child, buffer, offsetX2, offsetY2);
                     }
-
+                    */
+                    //restore renderbuffer?
                     if (tempAlpha) {
                         buffer.globalAlpha = tempAlpha;
                     }
                     if (savedMatrix) {
-                        let m = buffer.globalMatrix;
-                        m.a = savedMatrix.a;
-                        m.b = savedMatrix.b;
-                        m.c = savedMatrix.c;
-                        m.d = savedMatrix.d;
-                        m.tx = savedMatrix.tx;
-                        m.ty = savedMatrix.ty;
+                        tempMatrix = buffer.globalMatrix;
+                        tempMatrix.a = savedMatrix.a;
+                        tempMatrix.b = savedMatrix.b;
+                        tempMatrix.c = savedMatrix.c;
+                        tempMatrix.d = savedMatrix.d;
+                        tempMatrix.tx = savedMatrix.tx;
+                        tempMatrix.ty = savedMatrix.ty;
                         Matrix.release(savedMatrix);
+                        savedMatrix = null;
                     }
                 }
             }

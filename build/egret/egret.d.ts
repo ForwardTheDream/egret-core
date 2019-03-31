@@ -392,8 +392,7 @@ declare namespace egret {
          * @private
          * 能够含有子项的类将子项列表存储在这个属性里。
          */
-        $children: DisplayObject[];
-        $hasChildren: boolean;
+        readonly $children: DisplayObject[];
         private $name;
         /**
          * Indicates the instance name of the DisplayObject. The object can be identified in the child list of its parent
@@ -821,7 +820,6 @@ declare namespace egret {
          * @private
          * 如果有锚点，标记
          */
-        $hasAnchor: boolean;
         private $checkAnchorChanged();
         /**
          * @private

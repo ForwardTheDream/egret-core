@@ -36,38 +36,38 @@ namespace egret.sys {
    
         constructor() {
             super();
-            console.log('BatchRenderer constructor');
+            //console.log('BatchRenderer constructor');
         }
 
         public onPrerender(): void {
-            console.log('BatchRenderer onPrerender');
+            //console.log('BatchRenderer onPrerender');
         }
 
         public start(): void {
-            console.log('BatchRenderer start');
+            //console.log('BatchRenderer start');
         }
 
         public stop(): void {
-            console.log('BatchRenderer stop');
+            //console.log('BatchRenderer stop');
             this.flush();
         }
 
         public flush(): void {
-            console.log('BatchRenderer flush = ' + this.renderNodes.length);
+            //console.log('BatchRenderer flush = ' + this.renderNodes.length);
             this.renderNodes.length = 0;
         }
 
         public render(renderNode: egret.sys.RenderNode): void {
-            console.log('BatchRenderer render = ' + renderNode.type);
+            //console.log('BatchRenderer render = ' + renderNode.type);
             this.renderNodes.push(renderNode);
         }
 
         public contextChange(gl: WebGLRenderingContext): void {
-            console.log('BatchRenderer contextChange = ' + gl);
+            //console.log('BatchRenderer contextChange = ' + gl);
         }
 
         public destroy(): void {
-            console.log('BatchRenderer destroy');
+            //console.log('BatchRenderer destroy');
         }
     }
 

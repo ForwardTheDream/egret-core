@@ -145,10 +145,10 @@ namespace egret {
                     else {
                         offsetX2 = offsetX + child.$x;
                         offsetY2 = offsetY + child.$y;
-                        if (child.$hasAnchor) {
+                        //if (child.$hasAnchor) {
                             offsetX2 -= child.$anchorOffsetX;
                             offsetY2 -= child.$anchorOffsetY;
-                        }
+                        //}
                     }
                     let tempAlpha;
                     if (child.$alpha != 1) {

@@ -5871,11 +5871,11 @@ var egret;
                 this.currentRenderer.start();
             };
             WebGLRenderContext.prototype.flush = function () {
-                console.log('__________________________flush__________________________');
+                //console.log('__________________________flush__________________________');
                 this.currentRenderer.flush();
             };
             WebGLRenderContext.prototype.reset = function () {
-                console.log('__________________________reset current renderer to empty__________________________');
+                //console.log('__________________________reset current renderer to empty__________________________');
                 this.setObjectRenderer(this.emptyRenderer);
             };
             WebGLRenderContext.prototype.renderObject = function (node) {
@@ -5891,7 +5891,7 @@ var egret;
                         break;
                     }
                     case 4 /* GroupNode */: {
-                        //group do not need objectRender
+                        //GroupNode do not need objectRender
                         break;
                     }
                     case 5 /* MeshNode */: {
@@ -7473,6 +7473,7 @@ var egret;
                         this.renderParticle(<sys.ParticleNode>node, buffer);
                     }
                     */
+                    //restore?
                     buffer.$offsetX = 0;
                     buffer.$offsetY = 0;
                 }
@@ -7480,24 +7481,53 @@ var egret;
                     return drawCalls;
                 }
                 var children = displayObject.$children;
-                if (displayObject.$hasChildren) {
-                    var length_5 = children.length;
-                    for (var i = 0; i < length_5; i++) {
-                        var child = children[i];
-                        var offsetX2 = void 0;
-                        var offsetY2 = void 0;
-                        var tempAlpha = void 0;
-                        if (child.$alpha != 1) {
+                var length = children.length;
+                if (length > 0) {
+                    var child = null;
+                    var offsetX2 = 0;
+                    var offsetY2 = 0;
+                    var tempAlpha = 0;
+                    var savedMatrix = null;
+                    var tempMatrix = null;
+                    for (var i = 0; i < length; ++i) {
+                        //clear
+                        child = children[i];
+                        offsetX2 = 0;
+                        offsetY2 = 0;
+                        tempAlpha = 0;
+                        savedMatrix = null;
+                        tempMatrix = null;
+                        //
+                        if (child.$alpha !== 1) {
                             tempAlpha = buffer.globalAlpha;
                             buffer.globalAlpha *= child.$alpha;
                         }
-                        var savedMatrix = void 0;
+                        offsetX2 = offsetX + child.$x;
+                        offsetY2 = offsetY + child.$y;
                         if (child.$useTranslate) {
-                            var m = child.$getMatrix();
+                            //save
+                            tempMatrix = buffer.globalMatrix;
+                            savedMatrix = egret.Matrix.create();
+                            savedMatrix.a = tempMatrix.a;
+                            savedMatrix.b = tempMatrix.b;
+                            savedMatrix.c = tempMatrix.c;
+                            savedMatrix.d = tempMatrix.d;
+                            savedMatrix.tx = tempMatrix.tx;
+                            savedMatrix.ty = tempMatrix.ty;
+                            //
+                            tempMatrix = child.$getMatrix();
+                            buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
+                        }
+                        //
+                        offsetX2 -= child.$anchorOffsetX;
+                        offsetY2 -= child.$anchorOffsetY;
+                        /*old
+                        if (child.$useTranslate) {
+                            let m = child.$getMatrix();
                             offsetX2 = offsetX + child.$x;
                             offsetY2 = offsetY + child.$y;
-                            var m2 = buffer.globalMatrix;
-                            savedMatrix = egret.Matrix.create();
+                            let m2 = buffer.globalMatrix;
+                            savedMatrix = Matrix.create();
                             savedMatrix.a = m2.a;
                             savedMatrix.b = m2.b;
                             savedMatrix.c = m2.c;
@@ -7516,30 +7546,53 @@ var egret;
                                 offsetY2 -= child.$anchorOffsetY;
                             }
                         }
-                        if (child.$renderMode === 1 /* DEFAULT */) {
+                        */
+                        switch (child.$renderMode) {
+                            case 1 /* DEFAULT */: {
+                                drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);
+                                break;
+                            }
+                            case 3 /* FILTER */: {
+                                drawCalls += this.drawWithFilter(child, buffer, offsetX2, offsetY2);
+                                break;
+                            }
+                            case 4 /* CLIP */: {
+                                drawCalls += this.drawWithClip(child, buffer, offsetX2, offsetY2);
+                                break;
+                            }
+                            case 5 /* SCROLLRECT */: {
+                                drawCalls += this.drawWithScrollRect(child, buffer, offsetX2, offsetY2);
+                                break;
+                            }
+                        }
+                        /* old
+                        if (child.$renderMode === RenderMode.DEFAULT) {
                             drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);
                         }
-                        else if (child.$renderMode === 3 /* FILTER */) {
+                        else if (child.$renderMode === RenderMode.FILTER) {
                             drawCalls += this.drawWithFilter(child, buffer, offsetX2, offsetY2);
                         }
-                        else if (child.$renderMode === 4 /* CLIP */) {
+                        else if (child.$renderMode === RenderMode.CLIP) {
                             drawCalls += this.drawWithClip(child, buffer, offsetX2, offsetY2);
                         }
-                        else if (child.$renderMode === 5 /* SCROLLRECT */) {
+                        else if (child.$renderMode === RenderMode.SCROLLRECT) {
                             drawCalls += this.drawWithScrollRect(child, buffer, offsetX2, offsetY2);
                         }
+                        */
+                        //restore renderbuffer?
                         if (tempAlpha) {
                             buffer.globalAlpha = tempAlpha;
                         }
                         if (savedMatrix) {
-                            var m = buffer.globalMatrix;
-                            m.a = savedMatrix.a;
-                            m.b = savedMatrix.b;
-                            m.c = savedMatrix.c;
-                            m.d = savedMatrix.d;
-                            m.tx = savedMatrix.tx;
-                            m.ty = savedMatrix.ty;
+                            tempMatrix = buffer.globalMatrix;
+                            tempMatrix.a = savedMatrix.a;
+                            tempMatrix.b = savedMatrix.b;
+                            tempMatrix.c = savedMatrix.c;
+                            tempMatrix.d = savedMatrix.d;
+                            tempMatrix.tx = savedMatrix.tx;
+                            tempMatrix.ty = savedMatrix.ty;
                             egret.Matrix.release(savedMatrix);
+                            savedMatrix = null;
                         }
                     }
                 }
@@ -7928,8 +7981,8 @@ var egret;
                 }
                 var children = displayObject.$children;
                 if (children) {
-                    var length_6 = children.length;
-                    for (var i = 0; i < length_6; i++) {
+                    var length_5 = children.length;
+                    for (var i = 0; i < length_5; i++) {
                         var child = children[i];
                         if (child.$renderMode === 1 /* DEFAULT */) {
                             drawCalls += this.drawDisplayObject(child, buffer, 0, 0);
