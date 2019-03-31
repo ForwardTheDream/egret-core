@@ -55,7 +55,13 @@ namespace egret.web {
          * @param forRenderTexture 绘制目标是RenderTexture的标志
          * @returns drawCall触发绘制的次数
          */
-        public render(displayObject: DisplayObject, buffer: sys.RenderBuffer, matrix: Matrix, forRenderTexture?: boolean): number {
+        private __render__(displayObject: DisplayObject, 
+            buffer: sys.RenderBuffer, //renderTarget
+            matrix: Matrix, //transform?
+            forRenderTexture?: boolean, //???
+            clear?: boolean,
+            skipUpdateTransform?: boolean): number {
+
             this.nestLevel++;
             let webglBuffer: WebGLRenderBuffer = <WebGLRenderBuffer>buffer;
             let webglBufferContext: WebGLRenderContext = webglBuffer.context;
@@ -88,6 +94,44 @@ namespace egret.web {
                 }
             }
             return drawCall;
+        }
+
+        public render(displayObject: DisplayObject, buffer: sys.RenderBuffer, matrix: Matrix, forRenderTexture?: boolean): number {
+            return this.__render__(displayObject, buffer, matrix, forRenderTexture);
+            /*
+            this.nestLevel++;
+            let webglBuffer: WebGLRenderBuffer = <WebGLRenderBuffer>buffer;
+            let webglBufferContext: WebGLRenderContext = webglBuffer.context;
+            let root: DisplayObject = forRenderTexture ? displayObject : null;
+
+            webglBufferContext.pushBuffer(webglBuffer);
+
+            //绘制显示对象
+            webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+            this.drawDisplayObject(displayObject, webglBuffer, matrix.tx, matrix.ty, true);
+            webglBufferContext.$drawWebGL();
+            let drawCall = webglBuffer.$drawCalls;
+            webglBuffer.onRenderFinish();
+
+            webglBufferContext.popBuffer();
+            let invert = Matrix.create();
+            matrix.$invertInto(invert);
+            webglBuffer.transform(invert.a, invert.b, invert.c, invert.d, 0, 0);
+            Matrix.release(invert);
+
+            this.nestLevel--;
+            if (this.nestLevel === 0) {
+                //最大缓存6个渲染缓冲
+                if (renderBufferPool.length > 6) {
+                    renderBufferPool.length = 6;
+                }
+                let length = renderBufferPool.length;
+                for (let i = 0; i < length; i++) {
+                    renderBufferPool[i].resize(0, 0);
+                }
+            }
+            return drawCall;
+            */
         }
 
         /**
