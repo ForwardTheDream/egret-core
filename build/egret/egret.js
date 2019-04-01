@@ -625,7 +625,7 @@ var egret;
              */
             _this.$nestLevel = 0;
             _this.$useTranslate = false;
-            _this.$matrix = new egret.Matrix();
+            _this.$matrix = new egret.Matrix(); //local matrix
             _this.$matrixDirty = false;
             _this.$x = 0;
             _this.$y = 0;
@@ -845,6 +845,20 @@ var egret;
             enumerable: true,
             configurable: true
         });
+        //
+        DisplayObject.prototype.multiplyWorldTransform = function (a, b, c, d, tx, ty) {
+            var renderNode = this.$getRenderNode();
+            if (renderNode) {
+                renderNode.__multiplyWorldTransform(a, b, c, d, tx, ty);
+            }
+        };
+        //
+        DisplayObject.prototype.setWorldTransform = function (matrix) {
+            var renderNode = this.$getRenderNode();
+            if (renderNode) {
+                renderNode.__setWorldTransform(matrix);
+            }
+        };
         /**
          * @private
          * 获取矩阵
@@ -6034,10 +6048,31 @@ var egret;
                  * 绘制次数
                  */
                 this.renderCount = 0;
+                /**
+                 * 在显示对象的$updateRenderNode()方法被调用前，自动清空自身的drawData数据。
+                 */
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.$worldTransform = new egret.Matrix(); //world matrix
             }
-            /**
-             * 在显示对象的$updateRenderNode()方法被调用前，自动清空自身的drawData数据。
-             */
+            RenderNode.prototype.__multiplyWorldTransform = function (a, b, c, d, tx, ty) {
+                var matrix = this.$worldTransform;
+                var a1 = matrix.a;
+                var b1 = matrix.b;
+                var c1 = matrix.c;
+                var d1 = matrix.d;
+                if (a !== 1 || b !== 0 || c !== 0 || d !== 1) {
+                    matrix.a = a * a1 + b * c1;
+                    matrix.b = a * b1 + b * d1;
+                    matrix.c = c * a1 + d * c1;
+                    matrix.d = c * b1 + d * d1;
+                }
+                matrix.tx = tx * a1 + ty * c1 + matrix.tx;
+                matrix.ty = tx * b1 + ty * d1 + matrix.ty;
+            };
+            RenderNode.prototype.__setWorldTransform = function (matrix) {
+                this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
+            };
             RenderNode.prototype.cleanBeforeRender = function () {
                 this.drawData.length = 0;
                 this.renderCount = 0;

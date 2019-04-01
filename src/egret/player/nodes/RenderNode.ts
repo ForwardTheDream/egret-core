@@ -84,6 +84,32 @@ namespace egret.sys {
         /**
          * 在显示对象的$updateRenderNode()方法被调用前，自动清空自身的drawData数据。
          */
+
+        public offsetX: number = 0;
+        public offsetY: number = 0;
+        public $worldTransform: egret.Matrix = new egret.Matrix(); //world matrix
+        public __multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+            const matrix = this.$worldTransform;
+            const a1 = matrix.a;
+            const b1 = matrix.b;
+            const c1 = matrix.c;
+            const d1 = matrix.d;
+            if (a !== 1 || b !== 0 || c !== 0 || d !== 1) {
+                matrix.a = a * a1 + b * c1;
+                matrix.b = a * b1 + b * d1;
+                matrix.c = c * a1 + d * c1;
+                matrix.d = c * b1 + d * d1;
+            }
+            matrix.tx = tx * a1 + ty * c1 + matrix.tx;
+            matrix.ty = tx * b1 + ty * d1 + matrix.ty;
+        }
+
+        public __setWorldTransform(matrix: Matrix): void {
+            this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
+        }
+
+        
+
         public cleanBeforeRender(): void {
             this.drawData.length = 0;
             this.renderCount = 0;

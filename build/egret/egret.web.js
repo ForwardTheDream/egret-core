@@ -6200,6 +6200,15 @@ var egret;
                     buffer.saveTransform();
                     buffer_offsetX = buffer.$offsetX;
                     buffer_offsetY = buffer.$offsetY;
+                    if (true) {
+                        //check for refactor
+                        if (buffer_offsetX !== node.offsetX || buffer_offsetY !== node.offsetY) {
+                            egret.error('buffer_offsetX = ' + buffer_offsetX);
+                            egret.error('buffer_offsetY = ' + buffer_offsetY);
+                            egret.error('node.globalOffsetX = ' + node.offsetX);
+                            egret.error('node.globalOffsetY = ' + node.offsetY);
+                        }
+                    }
                     buffer.useOffset();
                     buffer.transform(1, 0, 0, -1, 0, destHeight + destY * 2); // 翻转
                 }
@@ -6231,6 +6240,14 @@ var egret;
                 var ty = locWorldTransform.ty;
                 var offsetX = buffer.$offsetX;
                 var offsetY = buffer.$offsetY;
+                if (true) {
+                    //check for refactor
+                    var wt = node.$worldTransform;
+                    if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
+                        || offsetX != node.offsetX || offsetY != node.offsetY) {
+                        egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    }
+                }
                 if (offsetX != 0 || offsetY != 0) {
                     tx = offsetX * a + offsetY * c + tx;
                     ty = offsetX * b + offsetY * d + ty;
@@ -7456,6 +7473,10 @@ var egret;
                     drawCalls++;
                     buffer.$offsetX = offsetX;
                     buffer.$offsetY = offsetY;
+                    //
+                    node.offsetX = offsetX;
+                    node.offsetY = offsetY;
+                    //
                     web.WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
                     switch (node.type) {
                         case 6 /* NormalBitmapNode */: {
@@ -7542,32 +7563,22 @@ var egret;
                             tempAlpha = buffer.globalAlpha;
                             buffer.globalAlpha *= child.$alpha;
                         }
-                        offsetX2 = offsetX + child.$x;
-                        offsetY2 = offsetY + child.$y;
-                        if (child.$useTranslate) {
-                            //save
-                            tempMatrix = buffer.globalMatrix;
-                            savedMatrix = egret.Matrix.create();
-                            savedMatrix.a = tempMatrix.a;
-                            savedMatrix.b = tempMatrix.b;
-                            savedMatrix.c = tempMatrix.c;
-                            savedMatrix.d = tempMatrix.d;
-                            savedMatrix.tx = tempMatrix.tx;
-                            savedMatrix.ty = tempMatrix.ty;
-                            //
-                            tempMatrix = child.$getMatrix();
-                            buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
+                        /*
+                        var child = children[i];
+                        var offsetX2 = void 0;
+                        var offsetY2 = void 0;
+                        var tempAlpha = void 0;
+                        if (child.$alpha != 1) {
+                            tempAlpha = buffer.globalAlpha;
+                            buffer.globalAlpha *= child.$alpha;
                         }
-                        //
-                        offsetX2 -= child.$anchorOffsetX;
-                        offsetY2 -= child.$anchorOffsetY;
-                        /*old
+                        var savedMatrix = void 0;
                         if (child.$useTranslate) {
-                            let m = child.$getMatrix();
+                            var m = child.$getMatrix();
                             offsetX2 = offsetX + child.$x;
                             offsetY2 = offsetY + child.$y;
-                            let m2 = buffer.globalMatrix;
-                            savedMatrix = Matrix.create();
+                            var m2 = buffer.globalMatrix;
+                            savedMatrix = egret.Matrix.create();
                             savedMatrix.a = m2.a;
                             savedMatrix.b = m2.b;
                             savedMatrix.c = m2.c;
@@ -7579,14 +7590,47 @@ var egret;
                             offsetY2 = -child.$anchorOffsetY;
                         }
                         else {
-                            offsetX2 = offsetX + child.$x;
-                            offsetY2 = offsetY + child.$y;
-                            if (child.$hasAnchor) {
-                                offsetX2 -= child.$anchorOffsetX;
-                                offsetY2 -= child.$anchorOffsetY;
-                            }
+                            offsetX2 = offsetX + child.$x - child.$anchorOffsetX;
+                            offsetY2 = offsetY + child.$y - child.$anchorOffsetY;
                         }
                         */
+                        offsetX2 = offsetX + child.$x;
+                        offsetY2 = offsetY + child.$y;
+                        //重构初步
+                        child.setWorldTransform(buffer.globalMatrix); //先设置worldtransform
+                        if (child.$useTranslate) {
+                            tempMatrix = buffer.globalMatrix;
+                            savedMatrix = egret.Matrix.create();
+                            savedMatrix.a = tempMatrix.a;
+                            savedMatrix.b = tempMatrix.b;
+                            savedMatrix.c = tempMatrix.c;
+                            savedMatrix.d = tempMatrix.d;
+                            savedMatrix.tx = tempMatrix.tx;
+                            savedMatrix.ty = tempMatrix.ty;
+                            //$getMatrix内部会标脏，做local的变换更新
+                            //这里应该优化下local = scale skew rotate; world = tx, ty
+                            //1 local变，world要变。
+                            //2 world变，local未必变。
+                            //应该遵循这两个原则。如果local和world都没变，实际上这一步不用做，只需要把上一次的vertexdata不做改变直接传给vb即可。
+                            //我觉得是我们的RenderBuffer的机制造成了必须这么写，因为现在child如果自己的x,y变了，确实worldtransform变了，但是
+                            //即使没变得情况，也不能确认传进来的RenderBuffer的矩阵是否有变化。
+                            //每一次都放弃状态，自然就要有还原的动作。
+                            tempMatrix = child.$getMatrix();
+                            //重构初步
+                            child.multiplyWorldTransform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2); //一样的变换
+                            //这里是旧的逻辑，local -> world，这里的性能消耗就强吃了，如果有scale skew rotate每次必算
+                            buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
+                            offsetX2 = -child.$anchorOffsetX;
+                            offsetY2 = -child.$anchorOffsetY;
+                        }
+                        else {
+                            offsetX2 += -child.$anchorOffsetX;
+                            offsetY2 += -child.$anchorOffsetY;
+                            // if (child.$hasAnchor) {
+                            //     offsetX2 -= child.$anchorOffsetX;
+                            //     offsetY2 -= child.$anchorOffsetY;
+                            // }
+                        }
                         switch (child.$renderMode) {
                             case 1 /* DEFAULT */: {
                                 drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);

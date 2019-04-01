@@ -618,6 +618,15 @@ namespace egret.web {
                 buffer.saveTransform();
                 buffer_offsetX = buffer.$offsetX;
                 buffer_offsetY = buffer.$offsetY;
+                if (DEBUG) {
+                    //check for refactor
+                    if (buffer_offsetX !== node.offsetX || buffer_offsetY !== node.offsetY) {
+                        egret.error('buffer_offsetX = ' + buffer_offsetX);
+                        egret.error('buffer_offsetY = ' + buffer_offsetY);
+                        egret.error('node.globalOffsetX = ' + node.offsetX);
+                        egret.error('node.globalOffsetY = ' + node.offsetY);
+                    }
+                }
                 buffer.useOffset();
                 buffer.transform(1, 0, 0, -1, 0, destHeight + destY * 2);// 翻转
             } else if (!image.source && !image.webGLTexture) {
@@ -652,6 +661,16 @@ namespace egret.web {
             let ty = locWorldTransform.ty;
             let offsetX = buffer.$offsetX;
             let offsetY = buffer.$offsetY;
+
+            if (DEBUG) {
+                //check for refactor
+                const wt = node.$worldTransform;
+                if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty 
+                    || offsetX != node.offsetX || offsetY != node.offsetY) {
+                        egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    }
+            }
+            
             if (offsetX != 0 || offsetY != 0) {
                 tx = offsetX * a + offsetY * c + tx;
                 ty = offsetX * b + offsetY * d + ty;

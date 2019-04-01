@@ -301,7 +301,23 @@ namespace egret {
             return this.$getMatrix().clone();
         }
 
-        private $matrix: egret.Matrix = new egret.Matrix();
+        private $matrix: egret.Matrix = new egret.Matrix(); //local matrix
+
+        //
+        public multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+            const renderNode = this.$getRenderNode();
+            if (renderNode) {
+                renderNode.__multiplyWorldTransform(a, b, c, d, tx, ty);
+            }
+        }
+
+        //
+        public setWorldTransform(matrix: Matrix): void {
+            const renderNode = this.$getRenderNode();
+            if (renderNode) {
+                renderNode.__setWorldTransform(matrix);
+            }
+        }
 
         private $matrixDirty: boolean = false;
 
