@@ -327,6 +327,8 @@ namespace egret.web {
                         //     offsetY2 -= child.$anchorOffsetY;
                         // }
                     }
+                    //重构初步
+                    child.worldtransformToRenderNode();
                     
                     switch (child.$renderMode) {
                         case RenderMode.DEFAULT: {

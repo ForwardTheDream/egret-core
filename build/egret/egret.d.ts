@@ -500,8 +500,12 @@ declare namespace egret {
          */
         matrix: Matrix;
         private $matrix;
+        offsetX: number;
+        offsetY: number;
+        $worldTransform: egret.Matrix;
         multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void;
         setWorldTransform(matrix: Matrix): void;
+        worldtransformToRenderNode(): void;
         private $matrixDirty;
         /**
          * @private
@@ -3399,13 +3403,11 @@ declare namespace egret.sys {
         /**
          * 在显示对象的$updateRenderNode()方法被调用前，自动清空自身的drawData数据。
          */
+        cleanBeforeRender(): void;
+        $getRenderCount(): number;
         offsetX: number;
         offsetY: number;
         $worldTransform: egret.Matrix;
-        __multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void;
-        __setWorldTransform(matrix: Matrix): void;
-        cleanBeforeRender(): void;
-        $getRenderCount(): number;
     }
     class ObjectRenderer {
         constructor();
