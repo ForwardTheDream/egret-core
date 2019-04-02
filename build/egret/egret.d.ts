@@ -502,6 +502,8 @@ declare namespace egret {
         private $matrix;
         _worldID: number;
         _parentID: number;
+        _localID: number;
+        _currentLocalID: number;
         offsetX: number;
         offsetY: number;
         $worldTransform: egret.Matrix;

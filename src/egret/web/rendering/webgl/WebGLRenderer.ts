@@ -40,6 +40,7 @@ namespace egret.web {
      */
     export class WebGLRenderer implements sys.SystemRenderer {
 
+        public readonly _tempDisplayObjectParent: DisplayObjectContainer = new DisplayObjectContainer;
 
         public constructor() {
 
@@ -69,12 +70,44 @@ namespace egret.web {
 
             webglBufferContext.pushBuffer(webglBuffer);
 
+            ///对一个没有父节点的stage做虚拟父级
+            const cacheParent = displayObject.parent;
+            const tempDisplayObjectParent = this._tempDisplayObjectParent;
+            //重设置矩阵local 和  world
+            tempDisplayObjectParent.$setMatrix(matrix, true);
+            tempDisplayObjectParent.$worldTransform.identity();
+            tempDisplayObjectParent.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+            displayObject.$setParent(tempDisplayObjectParent); //设置虚拟的父级
+            ///
+
             //绘制显示对象
             webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+
+            ///实验
+            //重构初步
+            if (displayObject._parentID !== tempDisplayObjectParent._worldID) {
+                //做转换
+                displayObject._parentID = tempDisplayObjectParent._worldID;
+                displayObject.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                ++displayObject._worldID;
+            }
+            if (DEBUG) {
+                const wt = displayObject.$worldTransform;
+                const globalMatrix = webglBuffer.globalMatrix;
+                if (!wt.equals(globalMatrix)) {
+                    egret.error('!wt.equals(globalMatrix)');
+                }
+            }
+            
+            ///
             this.drawDisplayObject(displayObject, webglBuffer, matrix.tx, matrix.ty, true);
             webglBufferContext.$drawWebGL();
             let drawCall = webglBuffer.$drawCalls;
             webglBuffer.onRenderFinish();
+
+            //还原回去,保持stage没有parent
+            displayObject.$setParent(cacheParent);
+            //
 
             webglBufferContext.popBuffer();
             let invert = Matrix.create();
@@ -314,7 +347,7 @@ namespace egret.web {
                         //每一次都放弃状态，自然就要有还原的动作。
                         tempMatrix = child.$getMatrix();
                         //重构初步
-                        if (child._parentID != displayObject._worldID) {
+                        if (child._parentID !== displayObject._worldID) {
                             child._parentID = displayObject._worldID;
                             // update the id of the transform..
                             ++child._worldID;
@@ -328,7 +361,7 @@ namespace egret.web {
                     }
                     else {
                         //重构初步
-                        if (child._parentID != displayObject._worldID) {
+                        if (child._parentID !== displayObject._worldID) {
                             child._parentID = displayObject._worldID;
                             // update the id of the transform..
                             ++child._worldID;

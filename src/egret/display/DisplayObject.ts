@@ -203,7 +203,6 @@ namespace egret {
          */
         $setParent(parent: DisplayObjectContainer): void {
             this.$parent = parent;
-            this._parentID = -1;
         }
 
         /**
@@ -305,6 +304,8 @@ namespace egret {
         private $matrix: egret.Matrix = new egret.Matrix(); //local matrix
         public _worldID: number = 0;
         public _parentID: number = 0;
+        public _localID = 0;
+        public _currentLocalID = 0;
 
         //
         public offsetX: number = 0;
@@ -352,7 +353,7 @@ namespace egret {
             if (self.$matrixDirty) {
                 self.$matrixDirty = false;
                 self.$matrix.$updateScaleAndRotation(self.$scaleX, self.$scaleY, self.$skewX, self.$skewY);
-                this._parentID = -1;
+                ++this._localID;
             }
             self.$matrix.tx = self.$x;
             self.$matrix.ty = self.$y;
@@ -377,7 +378,7 @@ namespace egret {
             self.$x = matrix.tx;
             self.$y = matrix.ty;
             self.$matrixDirty = false;
-            self._parentID = -1;
+            ++this._localID;
             if (m.a == 1 && m.b == 0 && m.c == 0 && m.d == 1) {
                 self.$useTranslate = false;
             }

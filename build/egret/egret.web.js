@@ -7359,6 +7359,7 @@ var egret;
          */
         var WebGLRenderer = (function () {
             function WebGLRenderer() {
+                this._tempDisplayObjectParent = new egret.DisplayObjectContainer;
                 this.nestLevel = 0; //渲染的嵌套层次，0表示在调用堆栈的最外层。
             }
             /**
@@ -7379,12 +7380,40 @@ var egret;
                 var webglBufferContext = webglBuffer.context;
                 var root = forRenderTexture ? displayObject : null;
                 webglBufferContext.pushBuffer(webglBuffer);
+                ///对一个没有父节点的stage做虚拟父级
+                var cacheParent = displayObject.parent;
+                var tempDisplayObjectParent = this._tempDisplayObjectParent;
+                //重设置矩阵local 和  world
+                tempDisplayObjectParent.$setMatrix(matrix, true);
+                tempDisplayObjectParent.$worldTransform.identity();
+                tempDisplayObjectParent.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                displayObject.$setParent(tempDisplayObjectParent); //设置虚拟的父级
+                ///
                 //绘制显示对象
                 webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                ///实验
+                //重构初步
+                if (displayObject._parentID !== tempDisplayObjectParent._worldID) {
+                    //做转换
+                    displayObject._parentID = tempDisplayObjectParent._worldID;
+                    displayObject.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                    ++displayObject._worldID;
+                }
+                if (true) {
+                    var wt = displayObject.$worldTransform;
+                    var globalMatrix = webglBuffer.globalMatrix;
+                    if (!wt.equals(globalMatrix)) {
+                        egret.error('!wt.equals(globalMatrix)');
+                    }
+                }
+                ///
                 this.drawDisplayObject(displayObject, webglBuffer, matrix.tx, matrix.ty, true);
                 webglBufferContext.$drawWebGL();
                 var drawCall = webglBuffer.$drawCalls;
                 webglBuffer.onRenderFinish();
+                //还原回去,保持stage没有parent
+                displayObject.$setParent(cacheParent);
+                //
                 webglBufferContext.popBuffer();
                 var invert = egret.Matrix.create();
                 matrix.$invertInto(invert);
@@ -7617,7 +7646,7 @@ var egret;
                             //每一次都放弃状态，自然就要有还原的动作。
                             tempMatrix = child.$getMatrix();
                             //重构初步
-                            if (child._parentID != displayObject._worldID) {
+                            if (child._parentID !== displayObject._worldID) {
                                 child._parentID = displayObject._worldID;
                                 // update the id of the transform..
                                 ++child._worldID;
@@ -7631,7 +7660,7 @@ var egret;
                         }
                         else {
                             //重构初步
-                            if (child._parentID != displayObject._worldID) {
+                            if (child._parentID !== displayObject._worldID) {
                                 child._parentID = displayObject._worldID;
                                 // update the id of the transform..
                                 ++child._worldID;

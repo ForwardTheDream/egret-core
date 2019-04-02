@@ -628,6 +628,8 @@ var egret;
             _this.$matrix = new egret.Matrix(); //local matrix
             _this._worldID = 0;
             _this._parentID = 0;
+            _this._localID = 0;
+            _this._currentLocalID = 0;
             //
             _this.offsetX = 0;
             _this.offsetY = 0;
@@ -761,7 +763,6 @@ var egret;
          */
         DisplayObject.prototype.$setParent = function (parent) {
             this.$parent = parent;
-            this._parentID = -1;
         };
         /**
          * @private
@@ -889,7 +890,7 @@ var egret;
             if (self.$matrixDirty) {
                 self.$matrixDirty = false;
                 self.$matrix.$updateScaleAndRotation(self.$scaleX, self.$scaleY, self.$skewX, self.$skewY);
-                this._parentID = -1;
+                ++this._localID;
             }
             self.$matrix.tx = self.$x;
             self.$matrix.ty = self.$y;
@@ -910,7 +911,7 @@ var egret;
             self.$x = matrix.tx;
             self.$y = matrix.ty;
             self.$matrixDirty = false;
-            self._parentID = -1;
+            ++this._localID;
             if (m.a == 1 && m.b == 0 && m.c == 0 && m.d == 1) {
                 self.$useTranslate = false;
             }
@@ -4541,6 +4542,7 @@ var egret;
             }
             self.$children.splice(index, 0, child);
             child.$setParent(self);
+            child._parentID = -1;
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.addChildAt(child.$nativeDisplayObject.id, index);
             }
@@ -4783,6 +4785,7 @@ var egret;
             }
             var displayList = this.$displayList || this.$parentDisplayList;
             child.$setParent(null);
+            child._parentID = -1;
             var indexNow = children.indexOf(child);
             if (indexNow != -1) {
                 children.splice(indexNow, 1);
@@ -23705,6 +23708,7 @@ var egret;
             _this.$maxTouches = 99;
             _this.$stage = _this;
             _this.$nestLevel = 1;
+            _this._parentID = -1;
             return _this;
         }
         Stage.prototype.createNativeDisplayObject = function () {

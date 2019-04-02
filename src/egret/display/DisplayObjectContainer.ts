@@ -180,6 +180,7 @@ namespace egret {
 
             self.$children.splice(index, 0, child);
             child.$setParent(self);
+            child._parentID = -1;
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.addChildAt(child.$nativeDisplayObject.id, index);
             }
@@ -430,6 +431,7 @@ namespace egret {
             }
             let displayList = this.$displayList || this.$parentDisplayList;
             child.$setParent(null);
+            child._parentID = -1;
             let indexNow = children.indexOf(child);
             if (indexNow != -1) {
                 children.splice(indexNow, 1);

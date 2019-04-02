@@ -65,6 +65,7 @@ namespace egret {
             super();
             this.$stage = this;
             this.$nestLevel = 1;
+            this._parentID = -1;
         }
 
         protected createNativeDisplayObject(): void {
