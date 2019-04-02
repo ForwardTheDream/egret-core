@@ -7617,6 +7617,12 @@ var egret;
                             //每一次都放弃状态，自然就要有还原的动作。
                             tempMatrix = child.$getMatrix();
                             //重构初步
+                            if (child._parentID != displayObject._worldID) {
+                                child._parentID = displayObject._worldID;
+                                // update the id of the transform..
+                                ++child._worldID;
+                            }
+                            //重构初步
                             child.multiplyWorldTransform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2); //一样的变换
                             //这里是旧的逻辑，local -> world，这里的性能消耗就强吃了，如果有scale skew rotate每次必算
                             buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
@@ -7624,6 +7630,12 @@ var egret;
                             offsetY2 = -child.$anchorOffsetY;
                         }
                         else {
+                            //重构初步
+                            if (child._parentID != displayObject._worldID) {
+                                child._parentID = displayObject._worldID;
+                                // update the id of the transform..
+                                ++child._worldID;
+                            }
                             offsetX2 += -child.$anchorOffsetX;
                             offsetY2 += -child.$anchorOffsetY;
                             // if (child.$hasAnchor) {
