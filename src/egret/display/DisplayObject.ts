@@ -353,7 +353,6 @@ namespace egret {
             if (self.$matrixDirty) {
                 self.$matrixDirty = false;
                 self.$matrix.$updateScaleAndRotation(self.$scaleX, self.$scaleY, self.$skewX, self.$skewY);
-                ++this._localID;
             }
             self.$matrix.tx = self.$x;
             self.$matrix.ty = self.$y;
@@ -494,6 +493,7 @@ namespace egret {
                 return false;
             }
             self.$x = value;
+            ++this._localID;
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setX(value);
             }
@@ -561,6 +561,7 @@ namespace egret {
                 return false;
             }
             self.$y = value;
+            ++this._localID;
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setY(value);
             }
@@ -625,6 +626,7 @@ namespace egret {
             }
             self.$scaleX = value;
             self.$matrixDirty = true;
+            ++this._localID;
 
             self.$updateUseTransform();
             if (egret.nativeRender) {
@@ -689,6 +691,7 @@ namespace egret {
             }
             self.$scaleY = value;
             self.$matrixDirty = true;
+            ++this._localID;
 
             self.$updateUseTransform();
             if (egret.nativeRender) {
@@ -756,6 +759,7 @@ namespace egret {
             self.$skewY += angle;
             self.$rotation = value;
             self.$matrixDirty = true;
+            ++this._localID;
 
             self.$updateUseTransform();
             if (egret.nativeRender) {
@@ -810,6 +814,7 @@ namespace egret {
 
             self.$skewX = value;
             self.$matrixDirty = true;
+            ++this._localID;
 
             self.$updateUseTransform();
             if (egret.nativeRender) {
@@ -864,6 +869,7 @@ namespace egret {
 
             self.$skewY = value;
             self.$matrixDirty = true;
+            ++this._localID;
 
             self.$updateUseTransform();
             if (egret.nativeRender) {

@@ -890,7 +890,6 @@ var egret;
             if (self.$matrixDirty) {
                 self.$matrixDirty = false;
                 self.$matrix.$updateScaleAndRotation(self.$scaleX, self.$scaleY, self.$skewX, self.$skewY);
-                ++this._localID;
             }
             self.$matrix.tx = self.$x;
             self.$matrix.ty = self.$y;
@@ -1018,6 +1017,7 @@ var egret;
                 return false;
             }
             self.$x = value;
+            ++this._localID;
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setX(value);
             }
@@ -1083,6 +1083,7 @@ var egret;
                 return false;
             }
             self.$y = value;
+            ++this._localID;
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setY(value);
             }
@@ -1145,6 +1146,7 @@ var egret;
             }
             self.$scaleX = value;
             self.$matrixDirty = true;
+            ++this._localID;
             self.$updateUseTransform();
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setScaleX(value);
@@ -1206,6 +1208,7 @@ var egret;
             }
             self.$scaleY = value;
             self.$matrixDirty = true;
+            ++this._localID;
             self.$updateUseTransform();
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setScaleY(value);
@@ -1270,6 +1273,7 @@ var egret;
             self.$skewY += angle;
             self.$rotation = value;
             self.$matrixDirty = true;
+            ++this._localID;
             self.$updateUseTransform();
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setRotation(value);
@@ -1319,6 +1323,7 @@ var egret;
             value = value / 180 * Math.PI;
             self.$skewX = value;
             self.$matrixDirty = true;
+            ++this._localID;
             self.$updateUseTransform();
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setSkewX(self.$skewXdeg);
@@ -1368,6 +1373,7 @@ var egret;
             value = value / 180 * Math.PI;
             self.$skewY = value;
             self.$matrixDirty = true;
+            ++this._localID;
             self.$updateUseTransform();
             if (egret.nativeRender) {
                 self.$nativeDisplayObject.setSkewY(self.$skewYdeg);
