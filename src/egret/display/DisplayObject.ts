@@ -2366,6 +2366,64 @@ namespace egret {
             return false;
         }
 
+        public updateTransform(): void {
+            this._updateTransform(this.parent);
+        }
+
+        public _updateTransform(parent: DisplayObject): void {
+            return;
+            if (this._localID !== this._currentLocalID) {
+                this.$getMatrix();//这里有更新
+                this.offsetX = parent.offsetX + this.x;
+                this.offsetY = parent.offsetY + this.y;
+                this._currentLocalID = this._localID;
+                this._parentID = -1;
+            }
+            if (this._parentID !== parent._worldID) {
+                if (this.$useTranslate) {
+                    /*
+                    public multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+                        const matrix = this.$worldTransform;
+                        const a1 = matrix.a;
+                        const b1 = matrix.b;
+                        const c1 = matrix.c;
+                        const d1 = matrix.d;
+                        if (a !== 1 || b !== 0 || c !== 0 || d !== 1) {
+                            matrix.a = a * a1 + b * c1;
+                            matrix.b = a * b1 + b * d1;
+                            matrix.c = c * a1 + d * c1;
+                            matrix.d = c * b1 + d * d1;
+                        }
+                        matrix.tx = tx * a1 + ty * c1 + matrix.tx;
+                        matrix.ty = tx * b1 + ty * d1 + matrix.ty;
+                    }
+                    */
+                    const pmatrix = parent.$worldTransform;
+                    const a1 = pmatrix.a;
+                    const b1 = pmatrix.b;
+                    const c1 = pmatrix.c;
+                    const d1 = pmatrix.d;
+                    const worldtransform = this.$worldTransform;
+                    const localmatrix = this.$getMatrix();
+                    if (localmatrix.a !== 1 || localmatrix.b !== 0 || localmatrix.c !== 0 || localmatrix.d !== 1) {
+                        worldtransform.a = localmatrix.a * a1 + localmatrix.b * c1;
+                        worldtransform.b = localmatrix.a * b1 + localmatrix.b * d1;
+                        worldtransform.c = localmatrix.c * a1 + localmatrix.d * c1;
+                        worldtransform.d = localmatrix.c * b1 + localmatrix.d * d1;
+                    }
+                    worldtransform.tx = localmatrix.tx * a1 + localmatrix.ty * c1 + pmatrix.tx;
+                    worldtransform.ty = localmatrix.tx * b1 + localmatrix.ty * d1 + pmatrix.ty;
+                    this.offsetX = -this.$anchorOffsetX;
+                    this.offsetY = -this.$anchorOffsetY;
+                }
+                else {
+                    this.offsetX += -this.$anchorOffsetX;
+                    this.offsetY += -this.$anchorOffsetY;
+                }
+                this._parentID = parent._worldID;
+                ++this._worldID;
+            }
+        }
     }
 
 }

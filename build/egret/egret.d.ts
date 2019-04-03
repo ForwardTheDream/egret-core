@@ -1314,6 +1314,8 @@ declare namespace egret {
          * @platform Web,Native
          */
         willTrigger(type: string): boolean;
+        updateTransform(): void;
+        _updateTransform(parent: DisplayObject): void;
     }
 }
 declare namespace egret {
@@ -2964,6 +2966,7 @@ declare namespace egret {
          * @private
          */
         $hitTest(stageX: number, stageY: number): DisplayObject;
+        updateTransform(): void;
     }
 }
 declare namespace egret {

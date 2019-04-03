@@ -2749,6 +2749,63 @@ var egret;
             }
             return false;
         };
+        DisplayObject.prototype.updateTransform = function () {
+            this._updateTransform(this.parent);
+        };
+        DisplayObject.prototype._updateTransform = function (parent) {
+            return;
+            if (this._localID !== this._currentLocalID) {
+                this.$getMatrix(); //这里有更新
+                this.offsetX = parent.offsetX + this.x;
+                this.offsetY = parent.offsetY + this.y;
+                this._currentLocalID = this._localID;
+                this._parentID = -1;
+            }
+            if (this._parentID !== parent._worldID) {
+                if (this.$useTranslate) {
+                    /*
+                    public multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+                        const matrix = this.$worldTransform;
+                        const a1 = matrix.a;
+                        const b1 = matrix.b;
+                        const c1 = matrix.c;
+                        const d1 = matrix.d;
+                        if (a !== 1 || b !== 0 || c !== 0 || d !== 1) {
+                            matrix.a = a * a1 + b * c1;
+                            matrix.b = a * b1 + b * d1;
+                            matrix.c = c * a1 + d * c1;
+                            matrix.d = c * b1 + d * d1;
+                        }
+                        matrix.tx = tx * a1 + ty * c1 + matrix.tx;
+                        matrix.ty = tx * b1 + ty * d1 + matrix.ty;
+                    }
+                    */
+                    var pmatrix = parent.$worldTransform;
+                    var a1 = pmatrix.a;
+                    var b1 = pmatrix.b;
+                    var c1 = pmatrix.c;
+                    var d1 = pmatrix.d;
+                    var worldtransform = this.$worldTransform;
+                    var localmatrix = this.$getMatrix();
+                    if (localmatrix.a !== 1 || localmatrix.b !== 0 || localmatrix.c !== 0 || localmatrix.d !== 1) {
+                        worldtransform.a = localmatrix.a * a1 + localmatrix.b * c1;
+                        worldtransform.b = localmatrix.a * b1 + localmatrix.b * d1;
+                        worldtransform.c = localmatrix.c * a1 + localmatrix.d * c1;
+                        worldtransform.d = localmatrix.c * b1 + localmatrix.d * d1;
+                    }
+                    worldtransform.tx = localmatrix.tx * a1 + localmatrix.ty * c1 + pmatrix.tx;
+                    worldtransform.ty = localmatrix.tx * b1 + localmatrix.ty * d1 + pmatrix.ty;
+                    this.offsetX = -this.$anchorOffsetX;
+                    this.offsetY = -this.$anchorOffsetY;
+                }
+                else {
+                    this.offsetX += -this.$anchorOffsetX;
+                    this.offsetY += -this.$anchorOffsetY;
+                }
+                this._parentID = parent._worldID;
+                ++this._worldID;
+            }
+        };
         /**
          * @private
          * The default touchEnabled property of DisplayObject
@@ -5178,6 +5235,24 @@ var egret;
                 return this;
             }
             return _super.prototype.$hitTest.call(this, stageX, stageY);
+        };
+        DisplayObjectContainer.prototype.updateTransform = function () {
+            /*
+            if (this.sortableChildren && this.sortDirty) {
+                this.sortChildren();
+            }
+            this._boundsID++;
+            */
+            this._updateTransform(this.parent);
+            // TODO: check render flags, how to process stuff here
+            //this.worldAlpha = this.alpha * this.parent.worldAlpha;
+            var children = this.$children;
+            for (var i = 0, length_2 = children.length; i < length_2; ++i) {
+                var child = children[i];
+                if (child.visible) {
+                    child.updateTransform();
+                }
+            }
         };
         /**
          * @private
@@ -14431,8 +14506,8 @@ var egret;
                     egret.$callLaterArgsList = [];
                 }
                 if (functionList) {
-                    var length_2 = functionList.length;
-                    for (var i = 0; i < length_2; i++) {
+                    var length_3 = functionList.length;
+                    for (var i = 0; i < length_3; i++) {
                         var func = functionList[i];
                         if (func != null) {
                             func.apply(thisList[i], argsList[i]);
@@ -16088,8 +16163,8 @@ var egret;
                 if (renderBufferPool.length > 6) {
                     renderBufferPool.length = 6;
                 }
-                var length_3 = renderBufferPool.length;
-                for (var i = 0; i < length_3; i++) {
+                var length_4 = renderBufferPool.length;
+                for (var i = 0; i < length_4; i++) {
                     renderBufferPool[i].resize(0, 0);
                 }
             }
@@ -16153,8 +16228,8 @@ var egret;
             }
             var children = displayObject.$children;
             if (children) {
-                var length_4 = children.length;
-                for (var i = 0; i < length_4; i++) {
+                var length_5 = children.length;
+                for (var i = 0; i < length_5; i++) {
                     var child = children[i];
                     var offsetX2 = void 0;
                     var offsetY2 = void 0;
@@ -16481,8 +16556,8 @@ var egret;
             }
             var children = displayObject.$children;
             if (children) {
-                var length_5 = children.length;
-                for (var i = 0; i < length_5; i++) {
+                var length_6 = children.length;
+                for (var i = 0; i < length_6; i++) {
                     var child = children[i];
                     if (child.$renderMode === 1 /* DEFAULT */) {
                         drawCalls += this.drawDisplayObject(child, context, 0, 0);
@@ -18084,7 +18159,7 @@ var egret;
          */
         BitmapFont.prototype.getConfigByKey = function (configText, key) {
             var itemConfigTextList = configText.split(" ");
-            for (var i = 0, length_6 = itemConfigTextList.length; i < length_6; i++) {
+            for (var i = 0, length_7 = itemConfigTextList.length; i < length_7; i++) {
                 var itemConfigText = itemConfigTextList[i];
                 if (key == itemConfigText.substring(0, key.length)) {
                     var value = itemConfigText.substring(key.length + 1);
@@ -20906,8 +20981,8 @@ var egret;
                 if (lines && lines.length > 0) {
                     var textColor = values[2 /* textColor */];
                     var lastColor = -1;
-                    var length_7 = lines.length;
-                    for (var i = 0; i < length_7; i += 4) {
+                    var length_8 = lines.length;
+                    for (var i = 0; i < length_8; i += 4) {
                         var x = lines[i];
                         var y = lines[i + 1];
                         var w = lines[i + 2];
@@ -23620,8 +23695,8 @@ var egret;
         }
         var superTypes = prototype.__types__;
         if (prototype.__types__) {
-            var length_8 = superTypes.length;
-            for (var i = 0; i < length_8; i++) {
+            var length_9 = superTypes.length;
+            for (var i = 0; i < length_9; i++) {
                 var name_1 = superTypes[i];
                 if (types.indexOf(name_1) == -1) {
                     types.push(name_1);

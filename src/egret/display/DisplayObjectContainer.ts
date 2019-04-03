@@ -839,5 +839,24 @@ namespace egret {
             }
             return super.$hitTest(stageX, stageY);
         }
+
+        public updateTransform(): void {
+            /*
+            if (this.sortableChildren && this.sortDirty) {
+                this.sortChildren();
+            }
+            this._boundsID++;
+            */
+            this._updateTransform(this.parent);
+            // TODO: check render flags, how to process stuff here
+            //this.worldAlpha = this.alpha * this.parent.worldAlpha;
+            const children = this.$children;
+            for (let i = 0, length = children.length; i < length; ++i) {
+                const child = children[i];
+                if (child.visible) {
+                    child.updateTransform();
+                }
+            }
+        }
     }
 }

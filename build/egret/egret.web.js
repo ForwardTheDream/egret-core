@@ -7386,11 +7386,13 @@ var egret;
                 //重设置矩阵local 和  world
                 tempDisplayObjectParent.$setMatrix(matrix, true);
                 tempDisplayObjectParent.$worldTransform.identity();
+                //把全局偏移的矩阵整合进来
                 tempDisplayObjectParent.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
                 displayObject.$setParent(tempDisplayObjectParent); //设置虚拟的父级
                 ///
                 //绘制显示对象
                 webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                displayObject.updateTransform();
                 ///实验
                 //重构初步
                 if (displayObject._parentID !== tempDisplayObjectParent._worldID) {
@@ -7500,11 +7502,11 @@ var egret;
                 displayObject.$cacheDirty = false;
                 if (hasRednerNode) {
                     drawCalls++;
-                    buffer.$offsetX = offsetX;
-                    buffer.$offsetY = offsetY;
+                    buffer.$offsetX = displayObject.offsetX;
+                    buffer.$offsetY = displayObject.offsetY;
                     //
-                    node.offsetX = offsetX;
-                    node.offsetY = offsetY;
+                    // node.offsetX = displayObject.offsetX;
+                    // node.offsetY = displayObject.offsetY;
                     //
                     web.WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
                     switch (node.type) {
@@ -7673,6 +7675,8 @@ var egret;
                             // }
                         }
                         //重构初步
+                        child.offsetX = offsetX2;
+                        child.offsetY = offsetY2;
                         child.worldtransformToRenderNode();
                         switch (child.$renderMode) {
                             case 1 /* DEFAULT */: {
