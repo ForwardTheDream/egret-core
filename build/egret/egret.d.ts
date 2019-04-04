@@ -499,16 +499,15 @@ declare namespace egret {
          * @language zh_CN
          */
         matrix: Matrix;
-        private $matrix;
+        $matrix: egret.Matrix;
         _worldID: number;
         _parentID: number;
         _localID: number;
         _currentLocalID: number;
-        offsetX: number;
-        offsetY: number;
+        __$offsetX__: number;
+        __$offsetY__: number;
         $worldTransform: egret.Matrix;
-        multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void;
-        setWorldTransform(matrix: Matrix): void;
+        worldtransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void;
         worldtransformToRenderNode(): void;
         private $matrixDirty;
         /**
@@ -1315,6 +1314,7 @@ declare namespace egret {
          */
         willTrigger(type: string): boolean;
         updateTransform(): void;
+        _updateTempObjectTransform(): void;
         _updateTransform(parent: DisplayObject): void;
     }
 }
@@ -7078,6 +7078,7 @@ declare namespace egret {
          * @language zh_CN
          */
         equals(other: Matrix): boolean;
+        fequals(other: Matrix): boolean;
         /**
          * prepend matrix
          * @param a The value that affects the positioning of pixels along the x axis when scaling or rotating an image.
@@ -14373,6 +14374,8 @@ declare namespace egret {
          * @returns
          */
         private static cosInt(value);
+        private static readonly EPSILON;
+        static fequal(left: number, right: number): boolean;
     }
 }
 /**

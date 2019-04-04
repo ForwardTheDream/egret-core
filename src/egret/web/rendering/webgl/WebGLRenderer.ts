@@ -70,17 +70,24 @@ namespace egret.web {
 
             webglBufferContext.pushBuffer(webglBuffer);
 
-            ///重构对一个没有父节点的stage做虚拟父级
+            ///重构对一个没有父节点的stage做虚拟父级，写的比较脏，以后整理
+            //缓存下来
             const cacheParent = displayObject.parent;
+            //准备修改虚拟父级的矩阵
             const tempDisplayObjectParent = this._tempDisplayObjectParent;
-            //重设置矩阵local 和  world
-            tempDisplayObjectParent.$setMatrix(matrix, true);
-            tempDisplayObjectParent.$worldTransform.identity();
-            //把全局偏移的矩阵整合进来
-            tempDisplayObjectParent.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+            //仿照下面这一句 webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);   
+            //local设置为偏移矩阵，同时tx,ty = 0;
+            const m1 = Matrix.create();
+            m1.setTo(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0); 
+            tempDisplayObjectParent.$setMatrix(m1, true); 
+            Matrix.release(m1);
+            //计算一下全局
+            tempDisplayObjectParent._updateTempObjectTransform();
+            //这个仿照 下面 this.drawDisplayObject(displayObject, webglBuffer, matrix.tx, matrix.ty, true);
+            tempDisplayObjectParent.__$offsetX__ = matrix.tx;
+            tempDisplayObjectParent.__$offsetY__ = matrix.ty;
             displayObject.$setParent(tempDisplayObjectParent); //设置虚拟的父级
             ///
-
             //绘制显示对象
             webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
             displayObject.updateTransform();
@@ -88,7 +95,7 @@ namespace egret.web {
                 //测试
                 const wt = displayObject.$worldTransform;
                 const globalMatrix = webglBuffer.globalMatrix;
-                if (!wt.equals(globalMatrix)) {
+                if (!wt.fequals(globalMatrix)) {
                     egret.error('!wt.equals(globalMatrix)');
                 }
             }
@@ -101,6 +108,8 @@ namespace egret.web {
 
             //还原回去,保持stage没有parent
             displayObject.$setParent(cacheParent);
+            tempDisplayObjectParent.__$offsetX__ = 0;
+            tempDisplayObjectParent.__$offsetY__ = 0;
             //
 
             webglBufferContext.popBuffer();

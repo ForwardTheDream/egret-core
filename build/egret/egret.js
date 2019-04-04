@@ -631,8 +631,8 @@ var egret;
             _this._localID = 0;
             _this._currentLocalID = 0;
             //
-            _this.offsetX = 0;
-            _this.offsetY = 0;
+            _this.__$offsetX__ = 0;
+            _this.__$offsetY__ = 0;
             _this.$worldTransform = new egret.Matrix(); //world matrix
             _this.$matrixDirty = false;
             _this.$x = 0;
@@ -853,7 +853,7 @@ var egret;
             enumerable: true,
             configurable: true
         });
-        DisplayObject.prototype.multiplyWorldTransform = function (a, b, c, d, tx, ty) {
+        DisplayObject.prototype.worldtransform = function (a, b, c, d, tx, ty) {
             var matrix = this.$worldTransform;
             var a1 = matrix.a;
             var b1 = matrix.b;
@@ -868,14 +868,14 @@ var egret;
             matrix.tx = tx * a1 + ty * c1 + matrix.tx;
             matrix.ty = tx * b1 + ty * d1 + matrix.ty;
         };
-        DisplayObject.prototype.setWorldTransform = function (matrix) {
-            this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
-        };
+        // public setWorldTransform(matrix: Matrix): void {
+        //     this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
+        // }
         DisplayObject.prototype.worldtransformToRenderNode = function () {
             var renderNode = this.$getRenderNode();
             if (renderNode) {
-                renderNode.offsetX = this.offsetX;
-                renderNode.offsetY = this.offsetY;
+                renderNode.offsetX = this.__$offsetX__;
+                renderNode.offsetY = this.__$offsetY__;
                 //
                 var wt = this.$worldTransform;
                 renderNode.$worldTransform.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
@@ -2752,16 +2752,52 @@ var egret;
         DisplayObject.prototype.updateTransform = function () {
             this._updateTransform(this.parent);
         };
+        DisplayObject.prototype._updateTempObjectTransform = function () {
+            //this.world = parent.world * this.local
+            this.__$offsetX__ = this.$x; //没有父级
+            this.__$offsetY__ = this.$y; //没有父级
+            //
+            var wt = egret.Matrix.create(); //虚拟一个identity的父级别
+            wt.identity();
+            var lt = this.$getMatrix();
+            var worldtransform = this.$worldTransform;
+            worldtransform.identity(); //world清除一下，因为准备重新算了
+            if (this.$useTranslate) {
+                worldtransform.a = lt.a * wt.a + lt.b * wt.c;
+                worldtransform.b = lt.a * wt.b + lt.b * wt.d;
+                worldtransform.c = lt.c * wt.a + lt.d * wt.c;
+                worldtransform.d = lt.c * wt.b + lt.d * wt.d;
+                worldtransform.tx = lt.tx * wt.a + lt.ty * wt.c + wt.tx;
+                worldtransform.ty = lt.tx * wt.b + lt.ty * wt.d + wt.ty;
+                this.__$offsetX__ = -this.$anchorOffsetX;
+                this.__$offsetY__ = -this.$anchorOffsetY;
+            }
+            else {
+                worldtransform.a = wt.a;
+                worldtransform.b = wt.b;
+                worldtransform.c = wt.c;
+                worldtransform.d = wt.d;
+                this.__$offsetX__ += -this.$anchorOffsetX;
+                this.__$offsetY__ += -this.$anchorOffsetY;
+            }
+            egret.Matrix.release(wt);
+            //
+            this.worldtransformToRenderNode();
+        };
         DisplayObject.prototype._updateTransform = function (parent) {
+            // if (window['flag']) {
+            //     egret.log('11111');
+            // }
             if (this._localID !== this._currentLocalID) {
-                this.$getMatrix(); //这里有更新
-                this.offsetX = parent.offsetX + this.x;
-                this.offsetY = parent.offsetY + this.y;
+                this.$getMatrix(); //这里有更新,虽然丑点，就这么写吧
                 this._currentLocalID = this._localID;
                 this._parentID = -1;
             }
             if (this._parentID !== parent._worldID) {
                 //this.world = parent.world * this.local
+                this.__$offsetX__ = parent.__$offsetX__ + this.$x;
+                this.__$offsetY__ = parent.__$offsetY__ + this.$y;
+                //
                 var wt = parent.$worldTransform;
                 var lt = this.$getMatrix();
                 var worldtransform = this.$worldTransform;
@@ -2772,16 +2808,16 @@ var egret;
                     worldtransform.d = lt.c * wt.b + lt.d * wt.d;
                     worldtransform.tx = lt.tx * wt.a + lt.ty * wt.c + wt.tx;
                     worldtransform.ty = lt.tx * wt.b + lt.ty * wt.d + wt.ty;
-                    this.offsetX = -this.$anchorOffsetX;
-                    this.offsetY = -this.$anchorOffsetY;
+                    this.__$offsetX__ = -this.$anchorOffsetX;
+                    this.__$offsetY__ = -this.$anchorOffsetY;
                 }
                 else {
                     worldtransform.a = wt.a;
                     worldtransform.b = wt.b;
                     worldtransform.c = wt.c;
                     worldtransform.d = wt.d;
-                    this.offsetX += -this.$anchorOffsetX;
-                    this.offsetY += -this.$anchorOffsetY;
+                    this.__$offsetX__ += -this.$anchorOffsetX;
+                    this.__$offsetY__ += -this.$anchorOffsetY;
                 }
                 //
                 this._parentID = parent._worldID;
@@ -11304,6 +11340,14 @@ var egret;
                 this.c == other.c && this.d == other.d &&
                 this.tx == other.tx && this.ty == other.ty;
         };
+        Matrix.prototype.fequals = function (other) {
+            return egret.NumberUtils.fequal(this.a, other.a)
+                && egret.NumberUtils.fequal(this.b, other.b)
+                && egret.NumberUtils.fequal(this.c, other.c)
+                && egret.NumberUtils.fequal(this.d, other.d)
+                && egret.NumberUtils.fequal(this.tx, other.tx)
+                && egret.NumberUtils.fequal(this.ty, other.ty);
+        };
         /**
          * prepend matrix
          * @param a The value that affects the positioning of pixels along the x axis when scaling or rotating an image.
@@ -15275,31 +15319,30 @@ var egret;
         var MeshRenderer = (function (_super) {
             __extends(MeshRenderer, _super);
             function MeshRenderer() {
-                var _this = _super.call(this) || this;
-                console.log('MeshRenderer constructor');
-                return _this;
+                return _super.call(this) || this;
+                //console.log('MeshRenderer constructor');
             }
             MeshRenderer.prototype.onPrerender = function () {
-                console.log('MeshRenderer onPrerender');
+                //console.log('MeshRenderer onPrerender');
             };
             MeshRenderer.prototype.start = function () {
-                console.log('MeshRenderer start');
+                //console.log('MeshRenderer start');
             };
             MeshRenderer.prototype.stop = function () {
-                console.log('MeshRenderer stop');
+                //console.log('MeshRenderer stop');
                 this.flush();
             };
             MeshRenderer.prototype.flush = function () {
-                console.log('MeshRenderer flush');
+                //console.log('MeshRenderer flush');
             };
             MeshRenderer.prototype.render = function (renderNode) {
-                console.log('MeshRenderer render = ' + renderNode);
+                //console.log('MeshRenderer render = ' + renderNode);
             };
             MeshRenderer.prototype.contextChange = function (gl) {
-                console.log('MeshRenderer contextChange = ' + gl);
+                //console.log('MeshRenderer contextChange = ' + gl);
             };
             MeshRenderer.prototype.destroy = function () {
-                console.log('MeshRenderer destroy');
+                //console.log('MeshRenderer destroy');
             };
             return MeshRenderer;
         }(sys.ObjectRenderer));
@@ -15530,31 +15573,30 @@ var egret;
         var ParticleRenderer = (function (_super) {
             __extends(ParticleRenderer, _super);
             function ParticleRenderer() {
-                var _this = _super.call(this) || this;
-                console.log('ParticleRenderer constructor');
-                return _this;
+                return _super.call(this) || this;
+                //console.log('ParticleRenderer constructor');
             }
             ParticleRenderer.prototype.onPrerender = function () {
-                console.log('ParticleRenderer onPrerender');
+                //console.log('ParticleRenderer onPrerender');
             };
             ParticleRenderer.prototype.start = function () {
-                console.log('ParticleRenderer start');
+                //console.log('ParticleRenderer start');
             };
             ParticleRenderer.prototype.stop = function () {
-                console.log('ParticleRenderer stop');
+                //console.log('ParticleRenderer stop');
                 this.flush();
             };
             ParticleRenderer.prototype.flush = function () {
-                console.log('ParticleRenderer flush');
+                //console.log('ParticleRenderer flush');
             };
             ParticleRenderer.prototype.render = function (renderNode) {
-                console.log('ParticleRenderer render = ' + renderNode);
+                //console.log('ParticleRenderer render = ' + renderNode);
             };
             ParticleRenderer.prototype.contextChange = function (gl) {
-                console.log('ParticleRenderer contextChange = ' + gl);
+                //console.log('ParticleRenderer contextChange = ' + gl);
             };
             ParticleRenderer.prototype.destroy = function () {
-                console.log('ParticleRenderer destroy');
+                //console.log('ParticleRenderer destroy');
             };
             return ParticleRenderer;
         }(sys.ObjectRenderer));
@@ -24383,6 +24425,11 @@ var egret;
             }
             return egret_cos_map[value];
         };
+        NumberUtils.fequal = function (left, right) {
+            return Math.abs(left - right) < NumberUtils.EPSILON;
+        };
+        //
+        NumberUtils.EPSILON = 0.000001; //根据精度需要;
         return NumberUtils;
     }());
     egret.NumberUtils = NumberUtils;

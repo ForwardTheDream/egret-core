@@ -301,17 +301,17 @@ namespace egret {
             return this.$getMatrix().clone();
         }
 
-        private $matrix: egret.Matrix = new egret.Matrix(); //local matrix
+        public $matrix: egret.Matrix = new egret.Matrix(); //local matrix
         public _worldID: number = 0;
         public _parentID: number = 0;
         public _localID = 0;
         public _currentLocalID = 0;
 
         //
-        public offsetX: number = 0;
-        public offsetY: number = 0;
+        public __$offsetX__: number = 0;
+        public __$offsetY__: number = 0;
         public $worldTransform: egret.Matrix = new egret.Matrix(); //world matrix
-        public multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+        public worldtransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
             const matrix = this.$worldTransform;
             const a1 = matrix.a;
             const b1 = matrix.b;
@@ -327,15 +327,15 @@ namespace egret {
             matrix.ty = tx * b1 + ty * d1 + matrix.ty;
         }
 
-        public setWorldTransform(matrix: Matrix): void {
-            this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
-        }
+        // public setWorldTransform(matrix: Matrix): void {
+        //     this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
+        // }
 
         public worldtransformToRenderNode(): void {
             const renderNode = this.$getRenderNode();
             if (renderNode) {
-                renderNode.offsetX = this.offsetX;
-                renderNode.offsetY = this.offsetY;
+                renderNode.offsetX = this.__$offsetX__;
+                renderNode.offsetY = this.__$offsetY__;
                 //
                 const wt = this.$worldTransform;
                 renderNode.$worldTransform.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
@@ -2370,16 +2370,53 @@ namespace egret {
             this._updateTransform(this.parent);
         }
 
+        public _updateTempObjectTransform(): void {
+            //this.world = parent.world * this.local
+            this.__$offsetX__ = this.$x; //没有父级
+            this.__$offsetY__ = this.$y; //没有父级
+            //
+            const wt = Matrix.create(); //虚拟一个identity的父级别
+            wt.identity();
+            const lt = this.$getMatrix();
+            const worldtransform = this.$worldTransform;
+            worldtransform.identity();//world清除一下，因为准备重新算了
+            if (this.$useTranslate) {
+                worldtransform.a = lt.a * wt.a + lt.b * wt.c;
+                worldtransform.b = lt.a * wt.b + lt.b * wt.d;
+                worldtransform.c = lt.c * wt.a + lt.d * wt.c;
+                worldtransform.d = lt.c * wt.b + lt.d * wt.d;
+                worldtransform.tx = lt.tx * wt.a + lt.ty * wt.c + wt.tx;
+                worldtransform.ty = lt.tx * wt.b + lt.ty * wt.d + wt.ty;
+                this.__$offsetX__ = -this.$anchorOffsetX;
+                this.__$offsetY__ = -this.$anchorOffsetY;
+            }
+            else {
+                worldtransform.a = wt.a;
+                worldtransform.b = wt.b;
+                worldtransform.c = wt.c;
+                worldtransform.d = wt.d;
+                this.__$offsetX__ += -this.$anchorOffsetX;
+                this.__$offsetY__ += -this.$anchorOffsetY;
+            }
+            Matrix.release(wt);
+            //
+            this.worldtransformToRenderNode();
+        }
+
         public _updateTransform(parent: DisplayObject): void {
+            // if (window['flag']) {
+            //     egret.log('11111');
+            // }
             if (this._localID !== this._currentLocalID) {
-                this.$getMatrix();//这里有更新
-                this.offsetX = parent.offsetX + this.x;
-                this.offsetY = parent.offsetY + this.y;
+                this.$getMatrix();//这里有更新,虽然丑点，就这么写吧
                 this._currentLocalID = this._localID;
                 this._parentID = -1;
             }
             if (this._parentID !== parent._worldID) {
                 //this.world = parent.world * this.local
+                this.__$offsetX__ = parent.__$offsetX__ + this.$x;
+                this.__$offsetY__ = parent.__$offsetY__ + this.$y;
+                //
                 const wt = parent.$worldTransform;
                 const lt = this.$getMatrix();
                 const worldtransform = this.$worldTransform;
@@ -2390,16 +2427,16 @@ namespace egret {
                     worldtransform.d = lt.c * wt.b + lt.d * wt.d;
                     worldtransform.tx = lt.tx * wt.a + lt.ty * wt.c + wt.tx;
                     worldtransform.ty = lt.tx * wt.b + lt.ty * wt.d + wt.ty;
-                    this.offsetX = -this.$anchorOffsetX;
-                    this.offsetY = -this.$anchorOffsetY;
+                    this.__$offsetX__ = -this.$anchorOffsetX;
+                    this.__$offsetY__ = -this.$anchorOffsetY;
                 }
                 else {
                     worldtransform.a = wt.a;
                     worldtransform.b = wt.b;
                     worldtransform.c = wt.c;
                     worldtransform.d = wt.d;
-                    this.offsetX += -this.$anchorOffsetX;
-                    this.offsetY += -this.$anchorOffsetY;
+                    this.__$offsetX__ += -this.$anchorOffsetX;
+                    this.__$offsetY__ += -this.$anchorOffsetY;
                 }
                 //
                 this._parentID = parent._worldID;

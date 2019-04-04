@@ -555,6 +555,15 @@ namespace egret {
                 this.tx == other.tx && this.ty == other.ty;
         }
 
+        public fequals(other: Matrix): boolean {
+            return NumberUtils.fequal(this.a, other.a)
+            && NumberUtils.fequal(this.b, other.b)
+            && NumberUtils.fequal(this.c, other.c)
+            && NumberUtils.fequal(this.d, other.d)
+            && NumberUtils.fequal(this.tx, other.tx)
+            && NumberUtils.fequal(this.ty, other.ty);
+        }
+
         /**
          * prepend matrix
          * @param a The value that affects the positioning of pixels along the x axis when scaling or rotating an image.

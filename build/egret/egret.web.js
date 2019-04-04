@@ -6202,7 +6202,7 @@ var egret;
                     buffer_offsetY = buffer.$offsetY;
                     if (true) {
                         //check for refactor
-                        if (buffer_offsetX !== node.offsetX || buffer_offsetY !== node.offsetY) {
+                        if (!egret.NumberUtils.fequal(buffer_offsetX, node.offsetX) || !egret.NumberUtils.fequal(buffer_offsetY, node.offsetY)) {
                             egret.error('buffer_offsetX = ' + buffer_offsetX);
                             egret.error('buffer_offsetY = ' + buffer_offsetY);
                             egret.error('node.globalOffsetX = ' + node.offsetX);
@@ -6243,8 +6243,16 @@ var egret;
                 if (true) {
                     //check for refactor
                     var wt = node.$worldTransform;
-                    if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
-                        || offsetX != node.offsetX || offsetY != node.offsetY) {
+                    // if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
+                    //     || offsetX != node.offsetX || offsetY != node.offsetY) {
+                    //     egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    // }
+                    if (!egret.NumberUtils.fequal(a, wt.a)
+                        || !egret.NumberUtils.fequal(b, wt.b)
+                        || !egret.NumberUtils.fequal(c, wt.c)
+                        || !egret.NumberUtils.fequal(d, wt.d)
+                        || !egret.NumberUtils.fequal(offsetX, node.offsetX)
+                        || !egret.NumberUtils.fequal(offsetY, node.offsetY)) {
                         egret.error('buffer.globalMatrix | node.$worldTransform.');
                     }
                 }
@@ -7380,14 +7388,22 @@ var egret;
                 var webglBufferContext = webglBuffer.context;
                 var root = forRenderTexture ? displayObject : null;
                 webglBufferContext.pushBuffer(webglBuffer);
-                ///重构对一个没有父节点的stage做虚拟父级
+                ///重构对一个没有父节点的stage做虚拟父级，写的比较脏，以后整理
+                //缓存下来
                 var cacheParent = displayObject.parent;
+                //准备修改虚拟父级的矩阵
                 var tempDisplayObjectParent = this._tempDisplayObjectParent;
-                //重设置矩阵local 和  world
-                tempDisplayObjectParent.$setMatrix(matrix, true);
-                tempDisplayObjectParent.$worldTransform.identity();
-                //把全局偏移的矩阵整合进来
-                tempDisplayObjectParent.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                //仿照下面这一句 webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);   
+                //local设置为偏移矩阵，同时tx,ty = 0;
+                var m1 = egret.Matrix.create();
+                m1.setTo(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
+                tempDisplayObjectParent.$setMatrix(m1, true);
+                egret.Matrix.release(m1);
+                //计算一下全局
+                tempDisplayObjectParent._updateTempObjectTransform();
+                //这个仿照 下面 this.drawDisplayObject(displayObject, webglBuffer, matrix.tx, matrix.ty, true);
+                tempDisplayObjectParent.__$offsetX__ = matrix.tx;
+                tempDisplayObjectParent.__$offsetY__ = matrix.ty;
                 displayObject.$setParent(tempDisplayObjectParent); //设置虚拟的父级
                 ///
                 //绘制显示对象
@@ -7397,7 +7413,7 @@ var egret;
                     //测试
                     var wt = displayObject.$worldTransform;
                     var globalMatrix = webglBuffer.globalMatrix;
-                    if (!wt.equals(globalMatrix)) {
+                    if (!wt.fequals(globalMatrix)) {
                         egret.error('!wt.equals(globalMatrix)');
                     }
                 }
@@ -7408,6 +7424,8 @@ var egret;
                 webglBuffer.onRenderFinish();
                 //还原回去,保持stage没有parent
                 displayObject.$setParent(cacheParent);
+                tempDisplayObjectParent.__$offsetX__ = 0;
+                tempDisplayObjectParent.__$offsetY__ = 0;
                 //
                 webglBufferContext.popBuffer();
                 var invert = egret.Matrix.create();

@@ -34,36 +34,36 @@ namespace egret.sys {
    
         constructor() {
             super();
-            console.log('MeshRenderer constructor');
+            //console.log('MeshRenderer constructor');
         }
 
         public onPrerender(): void {
-            console.log('MeshRenderer onPrerender');
+            //console.log('MeshRenderer onPrerender');
         }
 
         public start(): void {
-            console.log('MeshRenderer start');
+            //console.log('MeshRenderer start');
         }
 
         public stop(): void {
-            console.log('MeshRenderer stop');
+            //console.log('MeshRenderer stop');
             this.flush();
         }
 
         public flush(): void {
-            console.log('MeshRenderer flush');
+            //console.log('MeshRenderer flush');
         }
 
         public render(renderNode: RenderNode): void {
-            console.log('MeshRenderer render = ' + renderNode);
+            //console.log('MeshRenderer render = ' + renderNode);
         }
 
         public contextChange(gl: WebGLRenderingContext): void {
-            console.log('MeshRenderer contextChange = ' + gl);
+            //console.log('MeshRenderer contextChange = ' + gl);
         }
 
         public destroy(): void {
-            console.log('MeshRenderer destroy');
+            //console.log('MeshRenderer destroy');
         }
     }
 

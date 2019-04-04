@@ -620,7 +620,7 @@ namespace egret.web {
                 buffer_offsetY = buffer.$offsetY;
                 if (DEBUG) {
                     //check for refactor
-                    if (buffer_offsetX !== node.offsetX || buffer_offsetY !== node.offsetY) {
+                    if (!NumberUtils.fequal(buffer_offsetX, node.offsetX) || !NumberUtils.fequal(buffer_offsetY, node.offsetY)) {
                         egret.error('buffer_offsetX = ' + buffer_offsetX);
                         egret.error('buffer_offsetY = ' + buffer_offsetY);
                         egret.error('node.globalOffsetX = ' + node.offsetX);
@@ -665,12 +665,21 @@ namespace egret.web {
             if (DEBUG) {
                 //check for refactor
                 const wt = node.$worldTransform;
-                if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty 
-                    || offsetX != node.offsetX || offsetY != node.offsetY) {
-                        egret.error('buffer.globalMatrix | node.$worldTransform.');
-                    }
+                // if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
+                //     || offsetX != node.offsetX || offsetY != node.offsetY) {
+                //     egret.error('buffer.globalMatrix | node.$worldTransform.');
+                // }
+                if (!NumberUtils.fequal(a, wt.a) 
+                || !NumberUtils.fequal(b, wt.b)
+                || !NumberUtils.fequal(c, wt.c)
+                || !NumberUtils.fequal(d, wt.d)
+                || !NumberUtils.fequal(offsetX, node.offsetX)
+                || !NumberUtils.fequal(offsetY, node.offsetY)
+                ) {
+                    egret.error('buffer.globalMatrix | node.$worldTransform.');
+                }
             }
-            
+
             if (offsetX != 0 || offsetY != 0) {
                 tx = offsetX * a + offsetY * c + tx;
                 ty = offsetX * b + offsetY * d + ty;
