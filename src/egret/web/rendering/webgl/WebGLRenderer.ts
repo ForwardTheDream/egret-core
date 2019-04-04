@@ -70,7 +70,7 @@ namespace egret.web {
 
             webglBufferContext.pushBuffer(webglBuffer);
 
-            ///对一个没有父节点的stage做虚拟父级
+            ///重构对一个没有父节点的stage做虚拟父级
             const cacheParent = displayObject.parent;
             const tempDisplayObjectParent = this._tempDisplayObjectParent;
             //重设置矩阵local 和  world
@@ -84,15 +84,8 @@ namespace egret.web {
             //绘制显示对象
             webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
             displayObject.updateTransform();
-            ///实验
-            //重构初步
-            if (displayObject._parentID !== tempDisplayObjectParent._worldID) {
-                //做转换
-                displayObject._parentID = tempDisplayObjectParent._worldID;
-                displayObject.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
-                ++displayObject._worldID;
-            }
             if (DEBUG) {
+                //测试
                 const wt = displayObject.$worldTransform;
                 const globalMatrix = webglBuffer.globalMatrix;
                 if (!wt.equals(globalMatrix)) {
@@ -132,7 +125,7 @@ namespace egret.web {
 
         public render(displayObject: DisplayObject, buffer: sys.RenderBuffer, matrix: Matrix, forRenderTexture?: boolean): number {
             return this.__render__(displayObject, buffer, matrix, forRenderTexture);
-            /*
+            /* old
             this.nestLevel++;
             let webglBuffer: WebGLRenderBuffer = <WebGLRenderBuffer>buffer;
             let webglBufferContext: WebGLRenderContext = webglBuffer.context;
@@ -201,12 +194,8 @@ namespace egret.web {
             displayObject.$cacheDirty = false;
             if (hasRednerNode) {
                 drawCalls++;
-                buffer.$offsetX = displayObject.offsetX;
-                buffer.$offsetY = displayObject.offsetY;
-                //
-                // node.offsetX = displayObject.offsetX;
-                // node.offsetY = displayObject.offsetY;
-                //
+                buffer.$offsetX = offsetX;
+                buffer.$offsetY = offsetY;
                 WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
                 switch (node.type) {
                     case sys.RenderNodeType.NormalBitmapNode: {
@@ -293,7 +282,7 @@ namespace egret.web {
                         tempAlpha = buffer.globalAlpha;
                         buffer.globalAlpha *= child.$alpha;
                     }
-                    /*
+                    /* old
                     var child = children[i];
                     var offsetX2 = void 0;
                     var offsetY2 = void 0;
@@ -326,9 +315,6 @@ namespace egret.web {
                     */
                     offsetX2 = offsetX + child.$x;
                     offsetY2 = offsetY + child.$y;
-                    //重构初步
-                    child.setWorldTransform(buffer.globalMatrix); //先设置worldtransform
-                    
                     if (child.$useTranslate) {//scale skew rotate
                         tempMatrix = buffer.globalMatrix;
                         savedMatrix = Matrix.create();
@@ -348,13 +334,6 @@ namespace egret.web {
                         //每一次都放弃状态，自然就要有还原的动作。
                         tempMatrix = child.$getMatrix();
                         //重构初步
-                        if (child._parentID !== displayObject._worldID) {
-                            child._parentID = displayObject._worldID;
-                            // update the id of the transform..
-                            ++child._worldID;
-                        }
-                        //重构初步
-                        child.multiplyWorldTransform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2); //一样的变换
                         //这里是旧的逻辑，local -> world，这里的性能消耗就强吃了，如果有scale skew rotate每次必算
                         buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
                         offsetX2 = -child.$anchorOffsetX;
@@ -362,11 +341,6 @@ namespace egret.web {
                     }
                     else {
                         //重构初步
-                        if (child._parentID !== displayObject._worldID) {
-                            child._parentID = displayObject._worldID;
-                            // update the id of the transform..
-                            ++child._worldID;
-                        }
                         offsetX2 += -child.$anchorOffsetX;
                         offsetY2 += -child.$anchorOffsetY;
                         // if (child.$hasAnchor) {
@@ -374,11 +348,6 @@ namespace egret.web {
                         //     offsetY2 -= child.$anchorOffsetY;
                         // }
                     }
-                    //重构初步
-                    child.offsetX = offsetX2;
-                    child.offsetY = offsetY2;
-                    child.worldtransformToRenderNode();
-                    
                     switch (child.$renderMode) {
                         case RenderMode.DEFAULT: {
                             drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);

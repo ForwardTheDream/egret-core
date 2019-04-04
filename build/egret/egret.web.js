@@ -7380,7 +7380,7 @@ var egret;
                 var webglBufferContext = webglBuffer.context;
                 var root = forRenderTexture ? displayObject : null;
                 webglBufferContext.pushBuffer(webglBuffer);
-                ///对一个没有父节点的stage做虚拟父级
+                ///重构对一个没有父节点的stage做虚拟父级
                 var cacheParent = displayObject.parent;
                 var tempDisplayObjectParent = this._tempDisplayObjectParent;
                 //重设置矩阵local 和  world
@@ -7393,15 +7393,8 @@ var egret;
                 //绘制显示对象
                 webglBuffer.transform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
                 displayObject.updateTransform();
-                ///实验
-                //重构初步
-                if (displayObject._parentID !== tempDisplayObjectParent._worldID) {
-                    //做转换
-                    displayObject._parentID = tempDisplayObjectParent._worldID;
-                    displayObject.multiplyWorldTransform(matrix.a, matrix.b, matrix.c, matrix.d, 0, 0);
-                    ++displayObject._worldID;
-                }
                 if (true) {
+                    //测试
                     var wt = displayObject.$worldTransform;
                     var globalMatrix = webglBuffer.globalMatrix;
                     if (!wt.equals(globalMatrix)) {
@@ -7436,7 +7429,7 @@ var egret;
             };
             WebGLRenderer.prototype.render = function (displayObject, buffer, matrix, forRenderTexture) {
                 return this.__render__(displayObject, buffer, matrix, forRenderTexture);
-                /*
+                /* old
                 this.nestLevel++;
                 let webglBuffer: WebGLRenderBuffer = <WebGLRenderBuffer>buffer;
                 let webglBufferContext: WebGLRenderContext = webglBuffer.context;
@@ -7502,12 +7495,8 @@ var egret;
                 displayObject.$cacheDirty = false;
                 if (hasRednerNode) {
                     drawCalls++;
-                    buffer.$offsetX = displayObject.offsetX;
-                    buffer.$offsetY = displayObject.offsetY;
-                    //
-                    // node.offsetX = displayObject.offsetX;
-                    // node.offsetY = displayObject.offsetY;
-                    //
+                    buffer.$offsetX = offsetX;
+                    buffer.$offsetY = offsetY;
                     web.WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
                     switch (node.type) {
                         case 6 /* NormalBitmapNode */: {
@@ -7594,7 +7583,7 @@ var egret;
                             tempAlpha = buffer.globalAlpha;
                             buffer.globalAlpha *= child.$alpha;
                         }
-                        /*
+                        /* old
                         var child = children[i];
                         var offsetX2 = void 0;
                         var offsetY2 = void 0;
@@ -7627,8 +7616,6 @@ var egret;
                         */
                         offsetX2 = offsetX + child.$x;
                         offsetY2 = offsetY + child.$y;
-                        //重构初步
-                        child.setWorldTransform(buffer.globalMatrix); //先设置worldtransform
                         if (child.$useTranslate) {
                             tempMatrix = buffer.globalMatrix;
                             savedMatrix = egret.Matrix.create();
@@ -7648,13 +7635,6 @@ var egret;
                             //每一次都放弃状态，自然就要有还原的动作。
                             tempMatrix = child.$getMatrix();
                             //重构初步
-                            if (child._parentID !== displayObject._worldID) {
-                                child._parentID = displayObject._worldID;
-                                // update the id of the transform..
-                                ++child._worldID;
-                            }
-                            //重构初步
-                            child.multiplyWorldTransform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2); //一样的变换
                             //这里是旧的逻辑，local -> world，这里的性能消耗就强吃了，如果有scale skew rotate每次必算
                             buffer.transform(tempMatrix.a, tempMatrix.b, tempMatrix.c, tempMatrix.d, offsetX2, offsetY2);
                             offsetX2 = -child.$anchorOffsetX;
@@ -7662,11 +7642,6 @@ var egret;
                         }
                         else {
                             //重构初步
-                            if (child._parentID !== displayObject._worldID) {
-                                child._parentID = displayObject._worldID;
-                                // update the id of the transform..
-                                ++child._worldID;
-                            }
                             offsetX2 += -child.$anchorOffsetX;
                             offsetY2 += -child.$anchorOffsetY;
                             // if (child.$hasAnchor) {
@@ -7674,10 +7649,6 @@ var egret;
                             //     offsetY2 -= child.$anchorOffsetY;
                             // }
                         }
-                        //重构初步
-                        child.offsetX = offsetX2;
-                        child.offsetY = offsetY2;
-                        child.worldtransformToRenderNode();
                         switch (child.$renderMode) {
                             case 1 /* DEFAULT */: {
                                 drawCalls += this.drawDisplayObject(child, buffer, offsetX2, offsetY2);

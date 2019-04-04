@@ -2753,7 +2753,6 @@ var egret;
             this._updateTransform(this.parent);
         };
         DisplayObject.prototype._updateTransform = function (parent) {
-            return;
             if (this._localID !== this._currentLocalID) {
                 this.$getMatrix(); //这里有更新
                 this.offsetX = parent.offsetX + this.x;
@@ -2762,48 +2761,32 @@ var egret;
                 this._parentID = -1;
             }
             if (this._parentID !== parent._worldID) {
+                //this.world = parent.world * this.local
+                var wt = parent.$worldTransform;
+                var lt = this.$getMatrix();
+                var worldtransform = this.$worldTransform;
                 if (this.$useTranslate) {
-                    /*
-                    public multiplyWorldTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
-                        const matrix = this.$worldTransform;
-                        const a1 = matrix.a;
-                        const b1 = matrix.b;
-                        const c1 = matrix.c;
-                        const d1 = matrix.d;
-                        if (a !== 1 || b !== 0 || c !== 0 || d !== 1) {
-                            matrix.a = a * a1 + b * c1;
-                            matrix.b = a * b1 + b * d1;
-                            matrix.c = c * a1 + d * c1;
-                            matrix.d = c * b1 + d * d1;
-                        }
-                        matrix.tx = tx * a1 + ty * c1 + matrix.tx;
-                        matrix.ty = tx * b1 + ty * d1 + matrix.ty;
-                    }
-                    */
-                    var pmatrix = parent.$worldTransform;
-                    var a1 = pmatrix.a;
-                    var b1 = pmatrix.b;
-                    var c1 = pmatrix.c;
-                    var d1 = pmatrix.d;
-                    var worldtransform = this.$worldTransform;
-                    var localmatrix = this.$getMatrix();
-                    if (localmatrix.a !== 1 || localmatrix.b !== 0 || localmatrix.c !== 0 || localmatrix.d !== 1) {
-                        worldtransform.a = localmatrix.a * a1 + localmatrix.b * c1;
-                        worldtransform.b = localmatrix.a * b1 + localmatrix.b * d1;
-                        worldtransform.c = localmatrix.c * a1 + localmatrix.d * c1;
-                        worldtransform.d = localmatrix.c * b1 + localmatrix.d * d1;
-                    }
-                    worldtransform.tx = localmatrix.tx * a1 + localmatrix.ty * c1 + pmatrix.tx;
-                    worldtransform.ty = localmatrix.tx * b1 + localmatrix.ty * d1 + pmatrix.ty;
+                    worldtransform.a = lt.a * wt.a + lt.b * wt.c;
+                    worldtransform.b = lt.a * wt.b + lt.b * wt.d;
+                    worldtransform.c = lt.c * wt.a + lt.d * wt.c;
+                    worldtransform.d = lt.c * wt.b + lt.d * wt.d;
+                    worldtransform.tx = lt.tx * wt.a + lt.ty * wt.c + wt.tx;
+                    worldtransform.ty = lt.tx * wt.b + lt.ty * wt.d + wt.ty;
                     this.offsetX = -this.$anchorOffsetX;
                     this.offsetY = -this.$anchorOffsetY;
                 }
                 else {
+                    worldtransform.a = wt.a;
+                    worldtransform.b = wt.b;
+                    worldtransform.c = wt.c;
+                    worldtransform.d = wt.d;
                     this.offsetX += -this.$anchorOffsetX;
                     this.offsetY += -this.$anchorOffsetY;
                 }
+                //
                 this._parentID = parent._worldID;
                 ++this._worldID;
+                this.worldtransformToRenderNode();
             }
         };
         /**
