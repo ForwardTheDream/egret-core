@@ -13439,6 +13439,7 @@ var egret;
                 var stage = this.stage;
                 stage.$stageWidth = stageWidth;
                 stage.$stageHeight = stageHeight;
+                ++stage._localID;
                 if (egret.nativeRender) {
                     egret_native.nrResize(stageWidth, stageHeight);
                 }
