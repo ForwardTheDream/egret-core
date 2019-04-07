@@ -331,16 +331,16 @@ namespace egret {
         //     this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
         // }
 
-        public worldtransformToRenderNode(): void {
-            const renderNode = this.$getRenderNode();
-            if (renderNode) {
-                renderNode.offsetX = this.__$offsetX__;
-                renderNode.offsetY = this.__$offsetY__;
-                //
-                const wt = this.$worldTransform;
-                renderNode.$worldTransform.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
-            }
-        }
+        // public worldtransformToRenderNode(): void {
+        //     // const renderNode = this.$getRenderNode();
+        //     // if (renderNode) {
+        //     //     renderNode.offsetX = this.__$offsetX__;
+        //     //     renderNode.offsetY = this.__$offsetY__;
+        //     //     //
+        //     //     const wt = this.$worldTransform;
+        //     //     renderNode.$worldTransform.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
+        //     // }
+        // }
 
         private $matrixDirty: boolean = false;
 
@@ -406,11 +406,14 @@ namespace egret {
          */
         $getConcatenatedMatrix(): Matrix {
             let self = this;
+            if (self.name === 'bird') {
+                egret.error('2222222');
+            }
             let matrix = self.$concatenatedMatrix;
             if (!matrix) {
                 matrix = self.$concatenatedMatrix = new egret.Matrix();
             }
-            if (self.$parent) {
+            if (self.$parent && self.$parent.name !== '_tempDisplayObjectParent') {
                 self.$parent.$getConcatenatedMatrix().$preMultiplyInto(self.$getMatrix(),
                     matrix);
             } else {
@@ -2400,7 +2403,7 @@ namespace egret {
             }
             Matrix.release(wt);
             //
-            this.worldtransformToRenderNode();
+            //this.worldtransformToRenderNode();
         }
 
         public _updateTransform(parent: DisplayObject): void {
@@ -2441,7 +2444,7 @@ namespace egret {
                 //
                 this._parentID = parent._worldID;
                 ++this._worldID;
-                this.worldtransformToRenderNode();
+                //this.worldtransformToRenderNode();
             }
         }
     }

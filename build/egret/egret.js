@@ -634,6 +634,19 @@ var egret;
             _this.__$offsetX__ = 0;
             _this.__$offsetY__ = 0;
             _this.$worldTransform = new egret.Matrix(); //world matrix
+            // public setWorldTransform(matrix: Matrix): void {
+            //     this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
+            // }
+            // public worldtransformToRenderNode(): void {
+            //     // const renderNode = this.$getRenderNode();
+            //     // if (renderNode) {
+            //     //     renderNode.offsetX = this.__$offsetX__;
+            //     //     renderNode.offsetY = this.__$offsetY__;
+            //     //     //
+            //     //     const wt = this.$worldTransform;
+            //     //     renderNode.$worldTransform.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
+            //     // }
+            // }
             _this.$matrixDirty = false;
             _this.$x = 0;
             _this.$y = 0;
@@ -868,19 +881,6 @@ var egret;
             matrix.tx = tx * a1 + ty * c1 + matrix.tx;
             matrix.ty = tx * b1 + ty * d1 + matrix.ty;
         };
-        // public setWorldTransform(matrix: Matrix): void {
-        //     this.$worldTransform.setTo(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
-        // }
-        DisplayObject.prototype.worldtransformToRenderNode = function () {
-            var renderNode = this.$getRenderNode();
-            if (renderNode) {
-                renderNode.offsetX = this.__$offsetX__;
-                renderNode.offsetY = this.__$offsetY__;
-                //
-                var wt = this.$worldTransform;
-                renderNode.$worldTransform.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
-            }
-        };
         /**
          * @private
          * 获取矩阵
@@ -936,11 +936,14 @@ var egret;
          */
         DisplayObject.prototype.$getConcatenatedMatrix = function () {
             var self = this;
+            if (self.name === 'bird') {
+                egret.error('2222222');
+            }
             var matrix = self.$concatenatedMatrix;
             if (!matrix) {
                 matrix = self.$concatenatedMatrix = new egret.Matrix();
             }
-            if (self.$parent) {
+            if (self.$parent && self.$parent.name !== '_tempDisplayObjectParent') {
                 self.$parent.$getConcatenatedMatrix().$preMultiplyInto(self.$getMatrix(), matrix);
             }
             else {
@@ -2782,7 +2785,7 @@ var egret;
             }
             egret.Matrix.release(wt);
             //
-            this.worldtransformToRenderNode();
+            //this.worldtransformToRenderNode();
         };
         DisplayObject.prototype._updateTransform = function (parent) {
             // if (window['flag']) {
@@ -2822,7 +2825,7 @@ var egret;
                 //
                 this._parentID = parent._worldID;
                 ++this._worldID;
-                this.worldtransformToRenderNode();
+                //this.worldtransformToRenderNode();
             }
         };
         /**
@@ -6174,9 +6177,9 @@ var egret;
                  * 绘制次数
                  */
                 this.renderCount = 0;
-                this.offsetX = 0;
-                this.offsetY = 0;
-                this.$worldTransform = new egret.Matrix(); //world matrix
+                // public offsetX: number = 0;
+                // public offsetY: number = 0;
+                // public $worldTransform: egret.Matrix = new egret.Matrix(); //world matrix
             }
             /**
              * 在显示对象的$updateRenderNode()方法被调用前，自动清空自身的drawData数据。

@@ -93,9 +93,9 @@ namespace egret.sys {
             return this.renderCount;
         }
 
-        public offsetX: number = 0;
-        public offsetY: number = 0;
-        public $worldTransform: egret.Matrix = new egret.Matrix(); //world matrix
+        // public offsetX: number = 0;
+        // public offsetY: number = 0;
+        // public $worldTransform: egret.Matrix = new egret.Matrix(); //world matrix
     }
 
     export class ObjectRenderer {

@@ -508,7 +508,6 @@ declare namespace egret {
         __$offsetY__: number;
         $worldTransform: egret.Matrix;
         worldtransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void;
-        worldtransformToRenderNode(): void;
         private $matrixDirty;
         /**
          * @private
@@ -3412,9 +3411,6 @@ declare namespace egret.sys {
          */
         cleanBeforeRender(): void;
         $getRenderCount(): number;
-        offsetX: number;
-        offsetY: number;
-        $worldTransform: egret.Matrix;
     }
     class ObjectRenderer {
         constructor();

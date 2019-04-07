@@ -598,7 +598,7 @@ namespace egret.web {
          * 绘制图片，image参数可以是BitmapData或者renderTarget
          * 同样的功能，单参数，整合drawTexture部分
          */
-        public drawImageByRenderNode(node: sys.NormalBitmapNode) {
+        public drawImageByRenderNode(node: sys.NormalBitmapNode, displayObject: egret.DisplayObject) {
             let buffer = this.currentBuffer;
             let image = node.image;
             let destHeight = node.drawH;
@@ -620,11 +620,14 @@ namespace egret.web {
                 buffer_offsetY = buffer.$offsetY;
                 if (DEBUG) {
                     //check for refactor
-                    if (!NumberUtils.fequal(buffer_offsetX, node.offsetX) || !NumberUtils.fequal(buffer_offsetY, node.offsetY)) {
-                        egret.error('buffer_offsetX = ' + buffer_offsetX);
-                        egret.error('buffer_offsetY = ' + buffer_offsetY);
-                        egret.error('node.globalOffsetX = ' + node.offsetX);
-                        egret.error('node.globalOffsetY = ' + node.offsetY);
+                    if (displayObject) {
+                        if (!NumberUtils.fequal(buffer_offsetX, displayObject.__$offsetX__) || !NumberUtils.fequal(buffer_offsetY, displayObject.__$offsetY__)) {
+                            egret.error('buffer_offsetX != displayObject.__$offsetX__');
+                            egret.error('buffer_offsetY != displayObject.__$offsetY__');
+                            // egret.error('buffer_offsetY = ' + buffer_offsetY);
+                            // egret.error('node.globalOffsetX = ' + node.offsetX);
+                            // egret.error('node.globalOffsetY = ' + node.offsetY);
+                        }
                     }
                 }
                 buffer.useOffset();
@@ -664,19 +667,23 @@ namespace egret.web {
 
             if (DEBUG) {
                 //check for refactor
-                const wt = node.$worldTransform;
-                // if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
-                //     || offsetX != node.offsetX || offsetY != node.offsetY) {
-                //     egret.error('buffer.globalMatrix | node.$worldTransform.');
-                // }
-                if (!NumberUtils.fequal(a, wt.a) 
-                || !NumberUtils.fequal(b, wt.b)
-                || !NumberUtils.fequal(c, wt.c)
-                || !NumberUtils.fequal(d, wt.d)
-                || !NumberUtils.fequal(offsetX, node.offsetX)
-                || !NumberUtils.fequal(offsetY, node.offsetY)
-                ) {
-                    egret.error('buffer.globalMatrix | node.$worldTransform.');
+                if (displayObject) {
+                    const wt = displayObject.$worldTransform;
+                    // if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
+                    //     || offsetX != node.offsetX || offsetY != node.offsetY) {
+                    //     egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    // }
+                    if (!NumberUtils.fequal(a, wt.a)
+                        || !NumberUtils.fequal(b, wt.b)
+                        || !NumberUtils.fequal(c, wt.c)
+                        || !NumberUtils.fequal(d, wt.d)
+                        || !NumberUtils.fequal(tx, wt.tx)
+                        || !NumberUtils.fequal(ty, wt.ty)
+                        || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                        || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
+                    ) {
+                        egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    }
                 }
             }
 
@@ -840,7 +847,7 @@ namespace egret.web {
                 meshUVs, meshVertices, meshIndices, rotated);
         }
 
-        public drawTextureByRenderNode(node: sys.TextNode | sys.GraphicsNode): void {
+        public drawTextureByRenderNode(node: sys.TextNode | sys.GraphicsNode, displayObject: egret.DisplayObject): void {
             let texture = node.$texture;
             let sourceWidth = node.$textureWidth;
             let sourceHeight = node.$textureHeight;
@@ -869,6 +876,24 @@ namespace egret.web {
             let ty = locWorldTransform.ty;
             let offsetX = buffer.$offsetX;
             let offsetY = buffer.$offsetY;
+            if (DEBUG) {
+                //check for refactor
+                if (displayObject) {
+                    const wt = displayObject.$worldTransform;
+                    if (!NumberUtils.fequal(a, wt.a)
+                        || !NumberUtils.fequal(b, wt.b)
+                        || !NumberUtils.fequal(c, wt.c)
+                        || !NumberUtils.fequal(d, wt.d)
+                        || !NumberUtils.fequal(tx, wt.tx)
+                        || !NumberUtils.fequal(ty, wt.ty)
+                        || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                        || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
+                    ) {
+                        egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    }
+                }
+            }
+
             if (offsetX != 0 || offsetY != 0) {
                 tx = offsetX * a + offsetY * c + tx;
                 ty = offsetX * b + offsetY * d + ty;

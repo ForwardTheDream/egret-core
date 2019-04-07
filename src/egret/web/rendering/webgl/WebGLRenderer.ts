@@ -43,7 +43,7 @@ namespace egret.web {
         public readonly _tempDisplayObjectParent: DisplayObjectContainer = new DisplayObjectContainer;
 
         public constructor() {
-
+            this._tempDisplayObjectParent.name = '_tempDisplayObjectParent';
         }
 
         private nestLevel: number = 0;//渲染的嵌套层次，0表示在调用堆栈的最外层。
@@ -66,7 +66,10 @@ namespace egret.web {
             this.nestLevel++;
             let webglBuffer: WebGLRenderBuffer = <WebGLRenderBuffer>buffer;
             let webglBufferContext: WebGLRenderContext = webglBuffer.context;
-            let root: DisplayObject = forRenderTexture ? displayObject : null;
+            //let root: DisplayObject = forRenderTexture ? displayObject : null;
+            if (window['flag']) {
+                egret.error('111111');
+            }
 
             webglBufferContext.pushBuffer(webglBuffer);
 
@@ -208,7 +211,7 @@ namespace egret.web {
                 WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
                 switch (node.type) {
                     case sys.RenderNodeType.NormalBitmapNode: {
-                        this.renderNormalBitmap(<sys.NormalBitmapNode>node, buffer);
+                        this.renderNormalBitmap(<sys.NormalBitmapNode>node, buffer, displayObject);
                         break;
                     }
                     case sys.RenderNodeType.BitmapNode: {
@@ -216,11 +219,11 @@ namespace egret.web {
                         break;
                     }
                     case sys.RenderNodeType.TextNode: {
-                        this.renderText(<sys.TextNode>node, buffer);
+                        this.renderText(<sys.TextNode>node, buffer, displayObject);
                         break;
                     }
                     case sys.RenderNodeType.GraphicsNode: {
-                        this.renderGraphics(<sys.GraphicsNode>node, buffer);
+                        this.renderGraphics(<sys.GraphicsNode>node, buffer, displayObject);
                         break;
                     }
                     case sys.RenderNodeType.GroupNode: {
@@ -795,16 +798,16 @@ namespace egret.web {
                 drawCalls++;
                 WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
                 if (node.type == sys.RenderNodeType.NormalBitmapNode) {
-                    this.renderNormalBitmap(<sys.NormalBitmapNode>node, buffer);
+                    this.renderNormalBitmap(<sys.NormalBitmapNode>node, buffer, displayObject);
                 }
                 else if (node.type == sys.RenderNodeType.BitmapNode) {
                     this.renderBitmap(<sys.BitmapNode>node, buffer);
                 }
                 else if (node.type == sys.RenderNodeType.TextNode) {
-                    this.renderText(<sys.TextNode>node, buffer);
+                    this.renderText(<sys.TextNode>node, buffer, displayObject);
                 }
                 else if (node.type == sys.RenderNodeType.GraphicsNode) {
-                    this.renderGraphics(<sys.GraphicsNode>node, buffer);
+                    this.renderGraphics(<sys.GraphicsNode>node, buffer, displayObject);
                 }
                 else if (node.type == sys.RenderNodeType.GroupNode) {
                     this.renderGroup(<sys.GroupNode>node, buffer);
@@ -853,16 +856,16 @@ namespace egret.web {
             buffer.$offsetY = offsetY;
             WebGLRenderContext.getInstance().setObjectRendererByRenderNode(node);
             if (node.type == sys.RenderNodeType.NormalBitmapNode) {
-                this.renderNormalBitmap(<sys.NormalBitmapNode>node, buffer);
+                this.renderNormalBitmap(<sys.NormalBitmapNode>node, buffer, null);
             }
             else if (node.type == sys.RenderNodeType.BitmapNode) {
                 this.renderBitmap(<sys.BitmapNode>node, buffer);
             }
             else if (node.type == sys.RenderNodeType.TextNode) {
-                this.renderText(<sys.TextNode>node, buffer);
+                this.renderText(<sys.TextNode>node, buffer, null);
             }
             else if (node.type == sys.RenderNodeType.GraphicsNode) {
-                this.renderGraphics(<sys.GraphicsNode>node, buffer, forHitTest);
+                this.renderGraphics(<sys.GraphicsNode>node, buffer, null, forHitTest);
             }
             else if (node.type == sys.RenderNodeType.GroupNode) {
                 this.renderGroup(<sys.GroupNode>node, buffer);
@@ -879,13 +882,13 @@ namespace egret.web {
         /**
          * @private
          */
-        private renderNormalBitmap(node: sys.NormalBitmapNode, buffer: WebGLRenderBuffer): void {
+        private renderNormalBitmap(node: sys.NormalBitmapNode, buffer: WebGLRenderBuffer, displayObject: egret.DisplayObject): void {
             buffer.context.renderObject(node);
             let image = node.image;
             if (!image) {
                 return;
             }
-            buffer.context.drawImageByRenderNode(node);
+            buffer.context.drawImageByRenderNode(node, displayObject);
         }
 
         /**
@@ -1043,7 +1046,7 @@ namespace egret.web {
         /**
          * @private
          */
-        private renderText(node: sys.TextNode, buffer: WebGLRenderBuffer): void {
+        private renderText(node: sys.TextNode, buffer: WebGLRenderBuffer, displayObject: egret.DisplayObject): void {
             buffer.context.renderObject(node);
             let width = node.width - node.x;
             let height = node.height - node.y;
@@ -1111,7 +1114,7 @@ namespace egret.web {
                 node.$textureWidth = surface.width;
                 node.$textureHeight = surface.height;
             }
-            buffer.context.drawTextureByRenderNode(node);
+            buffer.context.drawTextureByRenderNode(node, displayObject);
 
             if (x || y) {
                 if (node.dirtyRender) {
@@ -1125,7 +1128,7 @@ namespace egret.web {
         /**
          * @private
          */
-        private renderGraphics(node: sys.GraphicsNode, buffer: WebGLRenderBuffer, forHitTest?: boolean): void {
+        private renderGraphics(node: sys.GraphicsNode, buffer: WebGLRenderBuffer, displayObject: egret.DisplayObject, forHitTest?: boolean ): void {
             buffer.context.renderObject(node);
             let width = node.width;
             let height = node.height;
@@ -1196,7 +1199,7 @@ namespace egret.web {
                 }
                 // buffer.context.drawTexture(node.$texture, 0, 0, node.$textureWidth, node.$textureHeight, 0, 0,
                 //     node.$textureWidth / canvasScaleX, node.$textureHeight / canvasScaleY, node.$textureWidth, node.$textureHeight);
-                buffer.context.drawTextureByRenderNode(node);
+                buffer.context.drawTextureByRenderNode(node, displayObject);
             }
 
             if (node.x || node.y) {
