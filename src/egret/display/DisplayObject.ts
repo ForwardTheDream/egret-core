@@ -2402,6 +2402,7 @@ namespace egret {
                 this.__$offsetX__ += -this.$anchorOffsetX;
                 this.__$offsetY__ += -this.$anchorOffsetY;
             }
+            this.$offsetMatrixDirty = true;
             Matrix.release(wt);
         }
 
@@ -2441,13 +2442,48 @@ namespace egret {
                 this.onUpdateTransform(parent);
                 this._parentID = parent._worldID;
                 ++this._worldID;
+                this.$offsetMatrixDirty = true;
             }
         }
         
-        public drawAsShape: boolean = false;
-        public drawAsText: boolean = false;
+        public $offsetMatrix: egret.Matrix = new egret.Matrix(); //local matrix
+        public $useOffsetMatrix: boolean = false;
+        public $offsetMatrixDirty: boolean = true;
         protected onUpdateTransform(parent: DisplayObject): void {
+            //下放给子类实现.....先这样
+        }
 
+        public updateOffetMatrix(parent: DisplayObject, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+            if (!this.$offsetMatrixDirty) {
+                return;
+            }
+            this.$offsetMatrixDirty = false;
+            ///
+            const wt = this.$worldTransform;
+            const offsetMatrix = this.$offsetMatrix;
+            offsetMatrix.identity();
+            offsetMatrix.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
+            //需要做变换。用一个临时的矩阵
+            const tempLocalMatrix = Matrix.create();
+            tempLocalMatrix.identity();
+            tempLocalMatrix.setTo(a, b, c, d, tx, ty);
+            //开始计算
+            const a1 = offsetMatrix.a;
+            const b1 = offsetMatrix.b;
+            const c1 = offsetMatrix.c;
+            const d1 = offsetMatrix.d;
+            const tx1 = offsetMatrix.tx;
+            const ty1 = offsetMatrix.ty;
+            if (tempLocalMatrix.a !== 1 || tempLocalMatrix.b !== 0 || tempLocalMatrix.c !== 0 || tempLocalMatrix.d !== 1) {
+                offsetMatrix.a = tempLocalMatrix.a * a1 + tempLocalMatrix.b * c1;
+                offsetMatrix.b = tempLocalMatrix.a * b1 + tempLocalMatrix.b * d1;
+                offsetMatrix.c = tempLocalMatrix.c * a1 + tempLocalMatrix.d * c1;
+                offsetMatrix.d = tempLocalMatrix.c * b1 + tempLocalMatrix.d * d1;
+            }
+            offsetMatrix.tx = tempLocalMatrix.tx * a1 + tempLocalMatrix.ty * c1 + tx1;
+            offsetMatrix.ty = tempLocalMatrix.tx * b1 + tempLocalMatrix.ty * d1 + ty1;
+            
+            Matrix.release(tempLocalMatrix);
         }
     }
 }

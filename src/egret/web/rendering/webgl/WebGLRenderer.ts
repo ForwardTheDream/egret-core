@@ -219,15 +219,11 @@ namespace egret.web {
                         break;
                     }
                     case sys.RenderNodeType.TextNode: {
-                        displayObject.drawAsText = true;
                         this.renderText(<sys.TextNode>node, buffer, displayObject);
-                        displayObject.drawAsText = false;
                         break;
                     }
                     case sys.RenderNodeType.GraphicsNode: {
-                        displayObject.drawAsShape = true;
                         this.renderGraphics(<sys.GraphicsNode>node, buffer, displayObject);
-                        displayObject.drawAsShape = false;
                         break;
                     }
                     case sys.RenderNodeType.GroupNode: {
@@ -808,14 +804,10 @@ namespace egret.web {
                     this.renderBitmap(<sys.BitmapNode>node, buffer);
                 }
                 else if (node.type == sys.RenderNodeType.TextNode) {
-                    displayObject.drawAsText = true;
                     this.renderText(<sys.TextNode>node, buffer, displayObject);
-                    displayObject.drawAsText = false;
                 }
                 else if (node.type == sys.RenderNodeType.GraphicsNode) {
-                    displayObject.drawAsShape = true;
                     this.renderGraphics(<sys.GraphicsNode>node, buffer, displayObject);
-                    displayObject.drawAsShape = false;
                 }
                 else if (node.type == sys.RenderNodeType.GroupNode) {
                     this.renderGroup(<sys.GroupNode>node, buffer);
@@ -1056,6 +1048,7 @@ namespace egret.web {
          */
         private renderText(node: sys.TextNode, buffer: WebGLRenderBuffer, displayObject: egret.DisplayObject): void {
             buffer.context.renderObject(node);
+            displayObject.$useOffsetMatrix = true;
             let width = node.width - node.x;
             let height = node.height - node.y;
             if (width <= 0 || height <= 0 || !width || !height || node.drawData.length == 0) {
@@ -1104,7 +1097,14 @@ namespace egret.web {
             else if (canvasScaleX != 1 || canvasScaleY != 1) {
                 this.canvasRenderBuffer.context.setTransform(canvasScaleX, 0, 0, canvasScaleY, 0, 0);
             }
-
+            //refactor
+            if (x || y) {
+                displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, x / canvasScaleX, y / canvasScaleY);
+            }
+            else {
+                displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, 0, 0);
+            }
+            ///
             if (node.dirtyRender) {
                 let surface = this.canvasRenderBuffer.surface;
                 this.canvasRenderer.renderText(node, this.canvasRenderBuffer.context);
@@ -1138,6 +1138,7 @@ namespace egret.web {
          */
         private renderGraphics(node: sys.GraphicsNode, buffer: WebGLRenderBuffer, displayObject: egret.DisplayObject, forHitTest?: boolean ): void {
             buffer.context.renderObject(node);
+            displayObject.$useOffsetMatrix = true;
             let width = node.width;
             let height = node.height;
             if (width <= 0 || height <= 0 || !width || !height || node.drawData.length == 0) {
@@ -1179,8 +1180,15 @@ namespace egret.web {
                 if (node.dirtyRender || forHitTest) {
                     this.canvasRenderBuffer.context.translate(-node.x, -node.y);
                 }
+                //refactor
+                displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, node.x, node.y);
                 buffer.transform(1, 0, 0, 1, node.x, node.y);
             }
+            else {
+                //refactor
+                displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, 0, 0);
+            }
+            
             let surface = this.canvasRenderBuffer.surface;
             if (forHitTest) {
                 this.canvasRenderer.renderGraphics(node, this.canvasRenderBuffer.context, true);

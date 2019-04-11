@@ -116,40 +116,6 @@ namespace egret {
                 this.$graphics.$onRemoveFromStage();
             }
         }
-
-        public $graphicsOffetMatrix: egret.Matrix = new egret.Matrix(); //local matrix
-        protected onUpdateTransform(parent: DisplayObject): void {
-            //clear and set this.$graphicsOffetMatrix
-            const wt = this.$worldTransform;
-            const gt = this.$graphicsOffetMatrix;
-            gt.identity();
-            gt.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
-            //
-            const node = this.graphics.$renderNode;
-            if (node.x || node.y) {
-                //需要做变换。用一个临时的矩阵
-                const offsetMatrix = Matrix.create();
-                offsetMatrix.identity();
-                offsetMatrix.setTo(1, 0, 0, 1, node.x, node.y);
-                //开始计算
-                const a1 = gt.a;
-                const b1 = gt.b;
-                const c1 = gt.c;
-                const d1 = gt.d;
-                const tx1 = gt.tx;
-                const ty1 = gt.ty;
-                if (offsetMatrix.a !== 1 || offsetMatrix.b !== 0 || offsetMatrix.c !== 0 || offsetMatrix.d !== 1) {
-                    gt.a = offsetMatrix.a * a1 + offsetMatrix.b * c1;
-                    gt.b = offsetMatrix.a * b1 + offsetMatrix.b * d1;
-                    gt.c = offsetMatrix.c * a1 + offsetMatrix.d * c1;
-                    gt.d = offsetMatrix.c * b1 + offsetMatrix.d * d1;
-                }
-                gt.tx = offsetMatrix.tx * a1 + offsetMatrix.ty * c1 + tx1;
-                gt.ty = offsetMatrix.tx * b1 + offsetMatrix.ty * d1 + ty1;
-                ///还原回去
-                Matrix.release(offsetMatrix);
-            }
-        }
     }
 
 }

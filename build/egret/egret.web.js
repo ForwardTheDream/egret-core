@@ -6424,35 +6424,18 @@ var egret;
                 if (true) {
                     //check for refactor
                     if (displayObject) {
-                        if (displayObject.drawAsShape) {
+                        if (displayObject.$useOffsetMatrix) {
                             //如果是绘制矢量绘图，会有一个tx, ty的偏移矩阵
-                            var gt = displayObject.$graphicsOffetMatrix;
-                            if (!egret.NumberUtils.fequal(a, gt.a)
-                                || !egret.NumberUtils.fequal(b, gt.b)
-                                || !egret.NumberUtils.fequal(c, gt.c)
-                                || !egret.NumberUtils.fequal(d, gt.d)
-                                || !egret.NumberUtils.fequal(tx, gt.tx)
-                                || !egret.NumberUtils.fequal(ty, gt.ty)
+                            var offsetMatrix = displayObject.$offsetMatrix;
+                            if (!egret.NumberUtils.fequal(a, offsetMatrix.a)
+                                || !egret.NumberUtils.fequal(b, offsetMatrix.b)
+                                || !egret.NumberUtils.fequal(c, offsetMatrix.c)
+                                || !egret.NumberUtils.fequal(d, offsetMatrix.d)
+                                || !egret.NumberUtils.fequal(tx, offsetMatrix.tx)
+                                || !egret.NumberUtils.fequal(ty, offsetMatrix.ty)
                                 || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
                                 || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
-                                egret.error('buffer.globalMatrix | (displayObject as egret.Shape).$graphicsOffetMatrix.');
-                            }
-                            else {
-                                // check is ok
-                            }
-                        }
-                        else if (displayObject.drawAsText) {
-                            //如果是文字绘图，会有一个tx, ty的偏移矩阵
-                            var gt = displayObject.$textOffetMatrix;
-                            if (!egret.NumberUtils.fequal(a, gt.a)
-                                || !egret.NumberUtils.fequal(b, gt.b)
-                                || !egret.NumberUtils.fequal(c, gt.c)
-                                || !egret.NumberUtils.fequal(d, gt.d)
-                                || !egret.NumberUtils.fequal(tx, gt.tx)
-                                || !egret.NumberUtils.fequal(ty, gt.ty)
-                                || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
-                                || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
-                                egret.error('buffer.globalMatrix | (displayObject as egret.TextField).$textOffetMatrix.');
+                                egret.error('buffer.globalMatrix | displayObject.$offsetMatrix.');
                             }
                             else {
                                 // check is ok
@@ -7595,15 +7578,11 @@ var egret;
                             break;
                         }
                         case 2 /* TextNode */: {
-                            displayObject.drawAsText = true;
                             this.renderText(node, buffer, displayObject);
-                            displayObject.drawAsText = false;
                             break;
                         }
                         case 3 /* GraphicsNode */: {
-                            displayObject.drawAsShape = true;
                             this.renderGraphics(node, buffer, displayObject);
-                            displayObject.drawAsShape = false;
                             break;
                         }
                         case 4 /* GroupNode */: {
@@ -8157,14 +8136,10 @@ var egret;
                         this.renderBitmap(node, buffer);
                     }
                     else if (node.type == 2 /* TextNode */) {
-                        displayObject.drawAsText = true;
                         this.renderText(node, buffer, displayObject);
-                        displayObject.drawAsText = false;
                     }
                     else if (node.type == 3 /* GraphicsNode */) {
-                        displayObject.drawAsShape = true;
                         this.renderGraphics(node, buffer, displayObject);
-                        displayObject.drawAsShape = false;
                     }
                     else if (node.type == 4 /* GroupNode */) {
                         this.renderGroup(node, buffer);
@@ -8388,6 +8363,7 @@ var egret;
              */
             WebGLRenderer.prototype.renderText = function (node, buffer, displayObject) {
                 buffer.context.renderObject(node);
+                displayObject.$useOffsetMatrix = true;
                 var width = node.width - node.x;
                 var height = node.height - node.y;
                 if (width <= 0 || height <= 0 || !width || !height || node.drawData.length == 0) {
@@ -8433,6 +8409,14 @@ var egret;
                 else if (canvasScaleX != 1 || canvasScaleY != 1) {
                     this.canvasRenderBuffer.context.setTransform(canvasScaleX, 0, 0, canvasScaleY, 0, 0);
                 }
+                //refactor
+                if (x || y) {
+                    displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, x / canvasScaleX, y / canvasScaleY);
+                }
+                else {
+                    displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, 0, 0);
+                }
+                ///
                 if (node.dirtyRender) {
                     var surface = this.canvasRenderBuffer.surface;
                     this.canvasRenderer.renderText(node, this.canvasRenderBuffer.context);
@@ -8464,6 +8448,7 @@ var egret;
              */
             WebGLRenderer.prototype.renderGraphics = function (node, buffer, displayObject, forHitTest) {
                 buffer.context.renderObject(node);
+                displayObject.$useOffsetMatrix = true;
                 var width = node.width;
                 var height = node.height;
                 if (width <= 0 || height <= 0 || !width || !height || node.drawData.length == 0) {
@@ -8505,7 +8490,13 @@ var egret;
                     if (node.dirtyRender || forHitTest) {
                         this.canvasRenderBuffer.context.translate(-node.x, -node.y);
                     }
+                    //refactor
+                    displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, node.x, node.y);
                     buffer.transform(1, 0, 0, 1, node.x, node.y);
+                }
+                else {
+                    //refactor
+                    displayObject.updateOffetMatrix(displayObject.parent, 1, 0, 0, 1, 0, 0);
                 }
                 var surface = this.canvasRenderBuffer.surface;
                 if (forHitTest) {

@@ -882,37 +882,19 @@ namespace egret.web {
             if (DEBUG) {
                 //check for refactor
                 if (displayObject) {
-                    if (displayObject.drawAsShape) {
+                    if (displayObject.$useOffsetMatrix) {
                         //如果是绘制矢量绘图，会有一个tx, ty的偏移矩阵
-                        const gt = (displayObject as egret.Shape).$graphicsOffetMatrix;
-                        if (!NumberUtils.fequal(a, gt.a)
-                            || !NumberUtils.fequal(b, gt.b)
-                            || !NumberUtils.fequal(c, gt.c)
-                            || !NumberUtils.fequal(d, gt.d)
-                            || !NumberUtils.fequal(tx, gt.tx)
-                            || !NumberUtils.fequal(ty, gt.ty)
+                        const offsetMatrix = displayObject.$offsetMatrix;
+                        if (!NumberUtils.fequal(a, offsetMatrix.a)
+                            || !NumberUtils.fequal(b, offsetMatrix.b)
+                            || !NumberUtils.fequal(c, offsetMatrix.c)
+                            || !NumberUtils.fequal(d, offsetMatrix.d)
+                            || !NumberUtils.fequal(tx, offsetMatrix.tx)
+                            || !NumberUtils.fequal(ty, offsetMatrix.ty)
                             || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
                             || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
                         ) {
-                            egret.error('buffer.globalMatrix | (displayObject as egret.Shape).$graphicsOffetMatrix.');
-                        }
-                        else {
-                            // check is ok
-                        }
-                    }
-                    else if (displayObject.drawAsText) {
-                        //如果是文字绘图，会有一个tx, ty的偏移矩阵
-                        const gt = (displayObject as egret.TextField).$textOffetMatrix;
-                        if (!NumberUtils.fequal(a, gt.a)
-                            || !NumberUtils.fequal(b, gt.b)
-                            || !NumberUtils.fequal(c, gt.c)
-                            || !NumberUtils.fequal(d, gt.d)
-                            || !NumberUtils.fequal(tx, gt.tx)
-                            || !NumberUtils.fequal(ty, gt.ty)
-                            || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
-                            || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
-                        ) {
-                            egret.error('buffer.globalMatrix | (displayObject as egret.TextField).$textOffetMatrix.');
+                            egret.error('buffer.globalMatrix | displayObject.$offsetMatrix.');
                         }
                         else {
                             // check is ok

@@ -1315,9 +1315,11 @@ declare namespace egret {
         updateTransform(): void;
         _updateTempObjectTransform(): void;
         _updateTransform(parent: DisplayObject): void;
-        drawAsShape: boolean;
-        drawAsText: boolean;
+        $offsetMatrix: egret.Matrix;
+        $useOffsetMatrix: boolean;
+        $offsetMatrixDirty: boolean;
         protected onUpdateTransform(parent: DisplayObject): void;
+        updateOffetMatrix(parent: DisplayObject, a: number, b: number, c: number, d: number, tx: number, ty: number): void;
     }
 }
 declare namespace egret {
@@ -10912,8 +10914,6 @@ declare namespace egret {
          * @private
          */
         $onRemoveFromStage(): void;
-        $graphicsOffetMatrix: egret.Matrix;
-        protected onUpdateTransform(parent: DisplayObject): void;
     }
 }
 declare namespace egret {
@@ -12909,8 +12909,6 @@ declare namespace egret {
         private addEvent();
         private removeEvent();
         private onTapHandler(e);
-        $textOffetMatrix: egret.Matrix;
-        protected onUpdateTransform(parent: DisplayObject): void;
     }
     interface TextField {
         addEventListener<Z>(type: "link", listener: (this: Z, e: TextEvent) => void, thisObject: Z, useCapture?: boolean, priority?: number): any;
