@@ -718,6 +718,7 @@ var egret;
             _this.$renderDirty = false;
             _this.$renderMode = 1 /* DEFAULT */;
             _this.drawAsShape = false;
+            _this.drawAsText = false;
             if (egret.nativeRender) {
                 _this.createNativeDisplayObject();
             }
@@ -13218,6 +13219,7 @@ var egret;
              */
             DisplayList.$canvasScaleX = 1;
             DisplayList.$canvasScaleY = 1;
+            DisplayList.$maxTextureSize = 1024;
             return DisplayList;
         }(egret.HashObject));
         sys.DisplayList = DisplayList;
@@ -19768,6 +19770,7 @@ var egret;
              * @private
              */
             _this.$isTyping = false;
+            _this.$textOffetMatrix = new egret.Matrix(); //local matrix
             var textNode = new egret.sys.TextNode();
             textNode.fontFamily = TextField.default_fontFamily;
             _this.textNode = textNode;
@@ -21682,6 +21685,56 @@ var egret;
                 else {
                     open(style.href, style.target || "_blank");
                 }
+            }
+        };
+        TextField.prototype.onUpdateTransform = function (parent) {
+            var node = this.$getRenderNode();
+            var width = node.width - node.x;
+            var height = node.height - node.y;
+            if (width <= 0 || height <= 0 || !width || !height || node.drawData.length == 0) {
+                return;
+            }
+            var canvasScaleX = egret.sys.DisplayList.$canvasScaleX;
+            var canvasScaleY = egret.sys.DisplayList.$canvasScaleY;
+            var maxTextureSize = egret.sys.DisplayList.$maxTextureSize;
+            if (width * canvasScaleX > maxTextureSize) {
+                canvasScaleX *= maxTextureSize / (width * canvasScaleX);
+            }
+            if (height * canvasScaleY > maxTextureSize) {
+                canvasScaleY *= maxTextureSize / (height * canvasScaleY);
+            }
+            //clear and set this.$graphicsOffetMatrix
+            var wt = this.$worldTransform;
+            var gt = this.$textOffetMatrix;
+            gt.identity();
+            gt.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
+            //
+            if (node.x || node.y) {
+                //需要做变换。用一个临时的矩阵
+                var offsetMatrix = egret.Matrix.create();
+                offsetMatrix.identity();
+                var x = node.x * canvasScaleX;
+                var y = node.y * canvasScaleY;
+                var tx = x / canvasScaleX;
+                var ty = y / canvasScaleY;
+                offsetMatrix.setTo(1, 0, 0, 1, tx, ty);
+                //开始计算
+                var a1 = gt.a;
+                var b1 = gt.b;
+                var c1 = gt.c;
+                var d1 = gt.d;
+                var tx1 = gt.tx;
+                var ty1 = gt.ty;
+                if (offsetMatrix.a !== 1 || offsetMatrix.b !== 0 || offsetMatrix.c !== 0 || offsetMatrix.d !== 1) {
+                    gt.a = offsetMatrix.a * a1 + offsetMatrix.b * c1;
+                    gt.b = offsetMatrix.a * b1 + offsetMatrix.b * d1;
+                    gt.c = offsetMatrix.c * a1 + offsetMatrix.d * c1;
+                    gt.d = offsetMatrix.c * b1 + offsetMatrix.d * d1;
+                }
+                gt.tx = offsetMatrix.tx * a1 + offsetMatrix.ty * c1 + tx1;
+                gt.ty = offsetMatrix.tx * b1 + offsetMatrix.ty * d1 + ty1;
+                ///还原回去
+                egret.Matrix.release(offsetMatrix);
             }
         };
         /**

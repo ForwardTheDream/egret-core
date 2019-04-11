@@ -1316,6 +1316,7 @@ declare namespace egret {
         _updateTempObjectTransform(): void;
         _updateTransform(parent: DisplayObject): void;
         drawAsShape: boolean;
+        drawAsText: boolean;
         protected onUpdateTransform(parent: DisplayObject): void;
     }
 }
@@ -8817,6 +8818,7 @@ declare namespace egret.sys {
          */
         static $canvasScaleX: number;
         static $canvasScaleY: number;
+        static $maxTextureSize: number;
         /**
          * @private
          */
@@ -12907,6 +12909,8 @@ declare namespace egret {
         private addEvent();
         private removeEvent();
         private onTapHandler(e);
+        $textOffetMatrix: egret.Matrix;
+        protected onUpdateTransform(parent: DisplayObject): void;
     }
     interface TextField {
         addEventListener<Z>(type: "link", listener: (this: Z, e: TextEvent) => void, thisObject: Z, useCapture?: boolean, priority?: number): any;

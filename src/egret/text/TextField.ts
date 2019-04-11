@@ -2311,6 +2311,58 @@ namespace egret {
                 }
             }
         }
+
+        public $textOffetMatrix: egret.Matrix = new egret.Matrix(); //local matrix
+        protected onUpdateTransform(parent: DisplayObject): void {
+            const node = this.$getRenderNode() as egret.sys.TextNode;
+            const width = node.width - node.x;
+            const height = node.height - node.y;
+            if (width <= 0 || height <= 0 || !width || !height || node.drawData.length == 0) {
+                return;
+            }
+            let canvasScaleX = sys.DisplayList.$canvasScaleX;
+            let canvasScaleY = sys.DisplayList.$canvasScaleY;
+            const maxTextureSize = sys.DisplayList.$maxTextureSize;
+            if (width * canvasScaleX > maxTextureSize) {
+                canvasScaleX *= maxTextureSize / (width * canvasScaleX);
+            }
+            if (height * canvasScaleY > maxTextureSize) {
+                canvasScaleY *= maxTextureSize / (height * canvasScaleY);
+            }
+            //clear and set this.$graphicsOffetMatrix
+            const wt = this.$worldTransform;
+            const gt = this.$textOffetMatrix;
+            gt.identity();
+            gt.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
+            //
+            if (node.x || node.y) {
+                //需要做变换。用一个临时的矩阵
+                const offsetMatrix = Matrix.create();
+                offsetMatrix.identity();
+                const x = node.x * canvasScaleX;
+                const y = node.y * canvasScaleY;
+                const tx = x / canvasScaleX; 
+                const ty = y / canvasScaleY;
+                offsetMatrix.setTo(1, 0, 0, 1, tx, ty);
+                //开始计算
+                const a1 = gt.a;
+                const b1 = gt.b;
+                const c1 = gt.c;
+                const d1 = gt.d;
+                const tx1 = gt.tx;
+                const ty1 = gt.ty;
+                if (offsetMatrix.a !== 1 || offsetMatrix.b !== 0 || offsetMatrix.c !== 0 || offsetMatrix.d !== 1) {
+                    gt.a = offsetMatrix.a * a1 + offsetMatrix.b * c1;
+                    gt.b = offsetMatrix.a * b1 + offsetMatrix.b * d1;
+                    gt.c = offsetMatrix.c * a1 + offsetMatrix.d * c1;
+                    gt.d = offsetMatrix.c * b1 + offsetMatrix.d * d1;
+                }
+                gt.tx = offsetMatrix.tx * a1 + offsetMatrix.ty * c1 + tx1;
+                gt.ty = offsetMatrix.tx * b1 + offsetMatrix.ty * d1 + ty1;
+                ///还原回去
+                Matrix.release(offsetMatrix);
+            }
+        }
     }
 
     export interface TextField {
@@ -2320,5 +2372,5 @@ namespace egret {
             "focusOut"
             , listener: (this: Z, e: FocusEvent) => void, thisObject: Z, useCapture?: boolean, priority?: number);
         addEventListener(type: string, listener: Function, thisObject: any, useCapture?: boolean, priority?: number);
-    }
+    }  
 }

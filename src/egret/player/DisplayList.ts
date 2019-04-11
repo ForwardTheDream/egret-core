@@ -206,6 +206,7 @@ namespace egret.sys {
          */
         public static $canvasScaleX: number = 1;
         public static $canvasScaleY: number = 1;
+        public static $maxTextureSize: number = 1024;
 
         /**
          * @private

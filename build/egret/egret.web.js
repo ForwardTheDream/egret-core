@@ -5962,6 +5962,7 @@ var egret;
                 this.getWebGLContext();
                 var gl = this.context;
                 this.$maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+                egret.sys.DisplayList.$maxTextureSize = this.$maxTextureSize; //refactor TO DO
             };
             WebGLRenderContext.prototype.handleContextLost = function () {
                 this.contextLost = true;
@@ -6210,6 +6211,9 @@ var egret;
                                 // egret.error('node.globalOffsetX = ' + node.offsetX);
                                 // egret.error('node.globalOffsetY = ' + node.offsetY);
                             }
+                            else {
+                                // check is ok
+                            }
                         }
                     }
                     buffer.useOffset();
@@ -6247,10 +6251,6 @@ var egret;
                     //check for refactor
                     if (displayObject) {
                         var wt = displayObject.$worldTransform;
-                        // if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
-                        //     || offsetX != node.offsetX || offsetY != node.offsetY) {
-                        //     egret.error('buffer.globalMatrix | node.$worldTransform.');
-                        // }
                         if (!egret.NumberUtils.fequal(a, wt.a)
                             || !egret.NumberUtils.fequal(b, wt.b)
                             || !egret.NumberUtils.fequal(c, wt.c)
@@ -6260,6 +6260,9 @@ var egret;
                             || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
                             || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
                             egret.error('buffer.globalMatrix | node.$worldTransform.');
+                        }
+                        else {
+                            // check is ok
                         }
                     }
                 }
@@ -6434,6 +6437,26 @@ var egret;
                                 || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
                                 egret.error('buffer.globalMatrix | (displayObject as egret.Shape).$graphicsOffetMatrix.');
                             }
+                            else {
+                                // check is ok
+                            }
+                        }
+                        else if (displayObject.drawAsText) {
+                            //如果是文字绘图，会有一个tx, ty的偏移矩阵
+                            var gt = displayObject.$textOffetMatrix;
+                            if (!egret.NumberUtils.fequal(a, gt.a)
+                                || !egret.NumberUtils.fequal(b, gt.b)
+                                || !egret.NumberUtils.fequal(c, gt.c)
+                                || !egret.NumberUtils.fequal(d, gt.d)
+                                || !egret.NumberUtils.fequal(tx, gt.tx)
+                                || !egret.NumberUtils.fequal(ty, gt.ty)
+                                || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                                || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
+                                egret.error('buffer.globalMatrix | (displayObject as egret.TextField).$textOffetMatrix.');
+                            }
+                            else {
+                                // check is ok
+                            }
                         }
                         else {
                             var wt = displayObject.$worldTransform;
@@ -6446,6 +6469,9 @@ var egret;
                                 || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
                                 || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
                                 egret.error('buffer.globalMatrix | node.$worldTransform.');
+                            }
+                            else {
+                                // check is ok
                             }
                         }
                     }
@@ -7569,7 +7595,9 @@ var egret;
                             break;
                         }
                         case 2 /* TextNode */: {
+                            displayObject.drawAsText = true;
                             this.renderText(node, buffer, displayObject);
+                            displayObject.drawAsText = false;
                             break;
                         }
                         case 3 /* GraphicsNode */: {
@@ -8129,7 +8157,9 @@ var egret;
                         this.renderBitmap(node, buffer);
                     }
                     else if (node.type == 2 /* TextNode */) {
+                        displayObject.drawAsText = true;
                         this.renderText(node, buffer, displayObject);
+                        displayObject.drawAsText = false;
                     }
                     else if (node.type == 3 /* GraphicsNode */) {
                         displayObject.drawAsShape = true;

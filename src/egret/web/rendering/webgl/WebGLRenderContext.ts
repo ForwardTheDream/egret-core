@@ -348,6 +348,7 @@ namespace egret.web {
 
             let gl = this.context;
             this.$maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+            sys.DisplayList.$maxTextureSize = this.$maxTextureSize; //refactor TO DO
         }
 
         private handleContextLost() {
@@ -628,6 +629,9 @@ namespace egret.web {
                             // egret.error('node.globalOffsetX = ' + node.offsetX);
                             // egret.error('node.globalOffsetY = ' + node.offsetY);
                         }
+                        else {
+                            // check is ok
+                        }
                     }
                 }
                 buffer.useOffset();
@@ -669,10 +673,6 @@ namespace egret.web {
                 //check for refactor
                 if (displayObject) {
                     const wt = displayObject.$worldTransform;
-                    // if (a !== wt.a || b !== wt.b || c !== wt.c || d !== wt.d || tx !== wt.tx || ty !== wt.ty
-                    //     || offsetX != node.offsetX || offsetY != node.offsetY) {
-                    //     egret.error('buffer.globalMatrix | node.$worldTransform.');
-                    // }
                     if (!NumberUtils.fequal(a, wt.a)
                         || !NumberUtils.fequal(b, wt.b)
                         || !NumberUtils.fequal(c, wt.c)
@@ -683,6 +683,9 @@ namespace egret.web {
                         || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
                     ) {
                         egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    }
+                    else {
+                        // check is ok
                     }
                 }
             }
@@ -893,6 +896,27 @@ namespace egret.web {
                         ) {
                             egret.error('buffer.globalMatrix | (displayObject as egret.Shape).$graphicsOffetMatrix.');
                         }
+                        else {
+                            // check is ok
+                        }
+                    }
+                    else if (displayObject.drawAsText) {
+                        //如果是文字绘图，会有一个tx, ty的偏移矩阵
+                        const gt = (displayObject as egret.TextField).$textOffetMatrix;
+                        if (!NumberUtils.fequal(a, gt.a)
+                            || !NumberUtils.fequal(b, gt.b)
+                            || !NumberUtils.fequal(c, gt.c)
+                            || !NumberUtils.fequal(d, gt.d)
+                            || !NumberUtils.fequal(tx, gt.tx)
+                            || !NumberUtils.fequal(ty, gt.ty)
+                            || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                            || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
+                        ) {
+                            egret.error('buffer.globalMatrix | (displayObject as egret.TextField).$textOffetMatrix.');
+                        }
+                        else {
+                            // check is ok
+                        }
                     }
                     else {
                         const wt = displayObject.$worldTransform;
@@ -906,6 +930,9 @@ namespace egret.web {
                             || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
                         ) {
                             egret.error('buffer.globalMatrix | node.$worldTransform.');
+                        }
+                        else {
+                            // check is ok
                         }
                     }
                 }

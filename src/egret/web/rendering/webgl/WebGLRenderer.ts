@@ -219,7 +219,9 @@ namespace egret.web {
                         break;
                     }
                     case sys.RenderNodeType.TextNode: {
+                        displayObject.drawAsText = true;
                         this.renderText(<sys.TextNode>node, buffer, displayObject);
+                        displayObject.drawAsText = false;
                         break;
                     }
                     case sys.RenderNodeType.GraphicsNode: {
@@ -806,7 +808,9 @@ namespace egret.web {
                     this.renderBitmap(<sys.BitmapNode>node, buffer);
                 }
                 else if (node.type == sys.RenderNodeType.TextNode) {
+                    displayObject.drawAsText = true;
                     this.renderText(<sys.TextNode>node, buffer, displayObject);
+                    displayObject.drawAsText = false;
                 }
                 else if (node.type == sys.RenderNodeType.GraphicsNode) {
                     displayObject.drawAsShape = true;

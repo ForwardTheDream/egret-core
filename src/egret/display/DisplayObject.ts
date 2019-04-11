@@ -2445,6 +2445,7 @@ namespace egret {
         }
         
         public drawAsShape: boolean = false;
+        public drawAsText: boolean = false;
         protected onUpdateTransform(parent: DisplayObject): void {
 
         }
