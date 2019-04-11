@@ -2373,6 +2373,7 @@ namespace egret {
             this._updateTransform(this.parent);
         }
 
+        //临时的函数
         public _updateTempObjectTransform(): void {
             //this.world = parent.world * this.local
             this.__$offsetX__ = this.$x; //没有父级
@@ -2402,14 +2403,9 @@ namespace egret {
                 this.__$offsetY__ += -this.$anchorOffsetY;
             }
             Matrix.release(wt);
-            //
-            //this.worldtransformToRenderNode();
         }
 
         public _updateTransform(parent: DisplayObject): void {
-            // if (window['flag']) {
-            //     egret.log('11111');
-            // }
             if (this._localID !== this._currentLocalID) {
                 this.$getMatrix();//这里有更新,虽然丑点，就这么写吧
                 this._currentLocalID = this._localID;
@@ -2441,12 +2437,16 @@ namespace egret {
                     this.__$offsetX__ += -this.$anchorOffsetX;
                     this.__$offsetY__ += -this.$anchorOffsetY;
                 }
-                //
+                //下放给子类的实现
+                this.onUpdateTransform(parent);
                 this._parentID = parent._worldID;
                 ++this._worldID;
-                //this.worldtransformToRenderNode();
             }
         }
-    }
+        
+        public drawAsShape: boolean = false;
+        protected onUpdateTransform(parent: DisplayObject): void {
 
+        }
+    }
 }

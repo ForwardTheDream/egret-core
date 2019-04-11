@@ -223,7 +223,9 @@ namespace egret.web {
                         break;
                     }
                     case sys.RenderNodeType.GraphicsNode: {
+                        displayObject.drawAsShape = true;
                         this.renderGraphics(<sys.GraphicsNode>node, buffer, displayObject);
+                        displayObject.drawAsShape = false;
                         break;
                     }
                     case sys.RenderNodeType.GroupNode: {
@@ -807,7 +809,9 @@ namespace egret.web {
                     this.renderText(<sys.TextNode>node, buffer, displayObject);
                 }
                 else if (node.type == sys.RenderNodeType.GraphicsNode) {
+                    displayObject.drawAsShape = true;
                     this.renderGraphics(<sys.GraphicsNode>node, buffer, displayObject);
+                    displayObject.drawAsShape = false;
                 }
                 else if (node.type == sys.RenderNodeType.GroupNode) {
                     this.renderGroup(<sys.GroupNode>node, buffer);

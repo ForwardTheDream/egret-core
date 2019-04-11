@@ -717,6 +717,7 @@ var egret;
              */
             _this.$renderDirty = false;
             _this.$renderMode = 1 /* DEFAULT */;
+            _this.drawAsShape = false;
             if (egret.nativeRender) {
                 _this.createNativeDisplayObject();
             }
@@ -2755,6 +2756,7 @@ var egret;
         DisplayObject.prototype.updateTransform = function () {
             this._updateTransform(this.parent);
         };
+        //临时的函数
         DisplayObject.prototype._updateTempObjectTransform = function () {
             //this.world = parent.world * this.local
             this.__$offsetX__ = this.$x; //没有父级
@@ -2784,13 +2786,8 @@ var egret;
                 this.__$offsetY__ += -this.$anchorOffsetY;
             }
             egret.Matrix.release(wt);
-            //
-            //this.worldtransformToRenderNode();
         };
         DisplayObject.prototype._updateTransform = function (parent) {
-            // if (window['flag']) {
-            //     egret.log('11111');
-            // }
             if (this._localID !== this._currentLocalID) {
                 this.$getMatrix(); //这里有更新,虽然丑点，就这么写吧
                 this._currentLocalID = this._localID;
@@ -2822,11 +2819,13 @@ var egret;
                     this.__$offsetX__ += -this.$anchorOffsetX;
                     this.__$offsetY__ += -this.$anchorOffsetY;
                 }
-                //
+                //下放给子类的实现
+                this.onUpdateTransform(parent);
                 this._parentID = parent._worldID;
                 ++this._worldID;
-                //this.worldtransformToRenderNode();
             }
+        };
+        DisplayObject.prototype.onUpdateTransform = function (parent) {
         };
         /**
          * @private
@@ -17746,6 +17745,7 @@ var egret;
          */
         function Shape() {
             var _this = _super.call(this) || this;
+            _this.$graphicsOffetMatrix = new egret.Matrix(); //local matrix
             _this.$graphics = new egret.Graphics();
             _this.$graphics.$setTarget(_this);
             return _this;
@@ -17792,6 +17792,38 @@ var egret;
             _super.prototype.$onRemoveFromStage.call(this);
             if (this.$graphics) {
                 this.$graphics.$onRemoveFromStage();
+            }
+        };
+        Shape.prototype.onUpdateTransform = function (parent) {
+            //clear and set this.$graphicsOffetMatrix
+            var wt = this.$worldTransform;
+            var gt = this.$graphicsOffetMatrix;
+            gt.identity();
+            gt.setTo(wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty);
+            //
+            var node = this.graphics.$renderNode;
+            if (node.x || node.y) {
+                //需要做变换。用一个临时的矩阵
+                var offsetMatrix = egret.Matrix.create();
+                offsetMatrix.identity();
+                offsetMatrix.setTo(1, 0, 0, 1, node.x, node.y);
+                //开始计算
+                var a1 = gt.a;
+                var b1 = gt.b;
+                var c1 = gt.c;
+                var d1 = gt.d;
+                var tx1 = gt.tx;
+                var ty1 = gt.ty;
+                if (offsetMatrix.a !== 1 || offsetMatrix.b !== 0 || offsetMatrix.c !== 0 || offsetMatrix.d !== 1) {
+                    gt.a = offsetMatrix.a * a1 + offsetMatrix.b * c1;
+                    gt.b = offsetMatrix.a * b1 + offsetMatrix.b * d1;
+                    gt.c = offsetMatrix.c * a1 + offsetMatrix.d * c1;
+                    gt.d = offsetMatrix.c * b1 + offsetMatrix.d * d1;
+                }
+                gt.tx = offsetMatrix.tx * a1 + offsetMatrix.ty * c1 + tx1;
+                gt.ty = offsetMatrix.tx * b1 + offsetMatrix.ty * d1 + ty1;
+                ///还原回去
+                egret.Matrix.release(offsetMatrix);
             }
         };
         return Shape;

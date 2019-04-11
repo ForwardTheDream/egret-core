@@ -6421,16 +6421,32 @@ var egret;
                 if (true) {
                     //check for refactor
                     if (displayObject) {
-                        var wt = displayObject.$worldTransform;
-                        if (!egret.NumberUtils.fequal(a, wt.a)
-                            || !egret.NumberUtils.fequal(b, wt.b)
-                            || !egret.NumberUtils.fequal(c, wt.c)
-                            || !egret.NumberUtils.fequal(d, wt.d)
-                            || !egret.NumberUtils.fequal(tx, wt.tx)
-                            || !egret.NumberUtils.fequal(ty, wt.ty)
-                            || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
-                            || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
-                            egret.error('buffer.globalMatrix | node.$worldTransform.');
+                        if (displayObject.drawAsShape) {
+                            //如果是绘制矢量绘图，会有一个tx, ty的偏移矩阵
+                            var gt = displayObject.$graphicsOffetMatrix;
+                            if (!egret.NumberUtils.fequal(a, gt.a)
+                                || !egret.NumberUtils.fequal(b, gt.b)
+                                || !egret.NumberUtils.fequal(c, gt.c)
+                                || !egret.NumberUtils.fequal(d, gt.d)
+                                || !egret.NumberUtils.fequal(tx, gt.tx)
+                                || !egret.NumberUtils.fequal(ty, gt.ty)
+                                || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                                || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
+                                egret.error('buffer.globalMatrix | (displayObject as egret.Shape).$graphicsOffetMatrix.');
+                            }
+                        }
+                        else {
+                            var wt = displayObject.$worldTransform;
+                            if (!egret.NumberUtils.fequal(a, wt.a)
+                                || !egret.NumberUtils.fequal(b, wt.b)
+                                || !egret.NumberUtils.fequal(c, wt.c)
+                                || !egret.NumberUtils.fequal(d, wt.d)
+                                || !egret.NumberUtils.fequal(tx, wt.tx)
+                                || !egret.NumberUtils.fequal(ty, wt.ty)
+                                || !egret.NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                                || !egret.NumberUtils.fequal(offsetY, displayObject.__$offsetY__)) {
+                                egret.error('buffer.globalMatrix | node.$worldTransform.');
+                            }
                         }
                     }
                 }
@@ -7557,7 +7573,9 @@ var egret;
                             break;
                         }
                         case 3 /* GraphicsNode */: {
+                            displayObject.drawAsShape = true;
                             this.renderGraphics(node, buffer, displayObject);
+                            displayObject.drawAsShape = false;
                             break;
                         }
                         case 4 /* GroupNode */: {
@@ -8114,7 +8132,9 @@ var egret;
                         this.renderText(node, buffer, displayObject);
                     }
                     else if (node.type == 3 /* GraphicsNode */) {
+                        displayObject.drawAsShape = true;
                         this.renderGraphics(node, buffer, displayObject);
+                        displayObject.drawAsShape = false;
                     }
                     else if (node.type == 4 /* GroupNode */) {
                         this.renderGroup(node, buffer);

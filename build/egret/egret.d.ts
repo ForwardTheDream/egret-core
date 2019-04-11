@@ -1315,6 +1315,8 @@ declare namespace egret {
         updateTransform(): void;
         _updateTempObjectTransform(): void;
         _updateTransform(parent: DisplayObject): void;
+        drawAsShape: boolean;
+        protected onUpdateTransform(parent: DisplayObject): void;
     }
 }
 declare namespace egret {
@@ -10908,6 +10910,8 @@ declare namespace egret {
          * @private
          */
         $onRemoveFromStage(): void;
+        $graphicsOffetMatrix: egret.Matrix;
+        protected onUpdateTransform(parent: DisplayObject): void;
     }
 }
 declare namespace egret {

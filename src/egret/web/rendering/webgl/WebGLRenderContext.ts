@@ -879,17 +879,34 @@ namespace egret.web {
             if (DEBUG) {
                 //check for refactor
                 if (displayObject) {
-                    const wt = displayObject.$worldTransform;
-                    if (!NumberUtils.fequal(a, wt.a)
-                        || !NumberUtils.fequal(b, wt.b)
-                        || !NumberUtils.fequal(c, wt.c)
-                        || !NumberUtils.fequal(d, wt.d)
-                        || !NumberUtils.fequal(tx, wt.tx)
-                        || !NumberUtils.fequal(ty, wt.ty)
-                        || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
-                        || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
-                    ) {
-                        egret.error('buffer.globalMatrix | node.$worldTransform.');
+                    if (displayObject.drawAsShape) {
+                        //如果是绘制矢量绘图，会有一个tx, ty的偏移矩阵
+                        const gt = (displayObject as egret.Shape).$graphicsOffetMatrix;
+                        if (!NumberUtils.fequal(a, gt.a)
+                            || !NumberUtils.fequal(b, gt.b)
+                            || !NumberUtils.fequal(c, gt.c)
+                            || !NumberUtils.fequal(d, gt.d)
+                            || !NumberUtils.fequal(tx, gt.tx)
+                            || !NumberUtils.fequal(ty, gt.ty)
+                            || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                            || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
+                        ) {
+                            egret.error('buffer.globalMatrix | (displayObject as egret.Shape).$graphicsOffetMatrix.');
+                        }
+                    }
+                    else {
+                        const wt = displayObject.$worldTransform;
+                        if (!NumberUtils.fequal(a, wt.a)
+                            || !NumberUtils.fequal(b, wt.b)
+                            || !NumberUtils.fequal(c, wt.c)
+                            || !NumberUtils.fequal(d, wt.d)
+                            || !NumberUtils.fequal(tx, wt.tx)
+                            || !NumberUtils.fequal(ty, wt.ty)
+                            || !NumberUtils.fequal(offsetX, displayObject.__$offsetX__)
+                            || !NumberUtils.fequal(offsetY, displayObject.__$offsetY__)
+                        ) {
+                            egret.error('buffer.globalMatrix | node.$worldTransform.');
+                        }
                     }
                 }
             }
