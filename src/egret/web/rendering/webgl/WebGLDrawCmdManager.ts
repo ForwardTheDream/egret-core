@@ -351,6 +351,7 @@ namespace egret.web {
             if (type === "texture") {
                 key = "texture";
                 fragSource = EgretShaderLib.texture_frag;
+                //fragSource = EgretShaderLib.texture_etc_atlas_frag; //test
             } else if (type === "custom") {
                 key = (filter as egret.CustomFilter).$shaderKey;
                 vertSource = (filter as egret.CustomFilter).$vertexSrc;
