@@ -5928,6 +5928,10 @@ var egret;
             WebGLRenderContext.prototype.createTextureFromCompressedData = function (data, width, height, levels, internalFormat) {
                 return null;
             };
+            WebGLRenderContext.prototype.___createTextureFromCompressedData = function (bitmapData) {
+                egret.log('______createTextureFromCompressedData______');
+                return null;
+            };
             /**
              * 更新材质的bitmapData
              */
@@ -5945,8 +5949,9 @@ var egret;
                     if (bitmapData.format == "image") {
                         bitmapData.webGLTexture = this.createTexture(bitmapData.source);
                     }
-                    else if (bitmapData.format == "pvr") {
+                    else if (bitmapData.format === "pvr" || bitmapData.format === "compressed_image") {
                         bitmapData.webGLTexture = this.createTextureFromCompressedData(bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format);
+                        bitmapData.webGLTexture = this.___createTextureFromCompressedData(bitmapData);
                     }
                     if (bitmapData.$deleteSource && bitmapData.webGLTexture) {
                         bitmapData.source = null;
