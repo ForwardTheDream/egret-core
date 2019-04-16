@@ -5358,11 +5358,11 @@ declare namespace egret {
     class KhronosTextureContainer {
         /** contents of the KTX container file */
         arrayBuffer: any;
-        private static HEADER_LEN;
-        private static COMPRESSED_2D;
-        private static COMPRESSED_3D;
-        private static TEX_2D;
-        private static TEX_3D;
+        static readonly HEADER_LEN: number;
+        static readonly COMPRESSED_2D: number;
+        static readonly COMPRESSED_3D: number;
+        static readonly TEX_2D: number;
+        static readonly TEX_3D: number;
         /**
          * Gets the openGL type
          */

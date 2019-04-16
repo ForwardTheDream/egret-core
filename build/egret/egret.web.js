@@ -5683,6 +5683,68 @@ var egret;
             }
             return canvas;
         }
+        var compressedTextureType = ['s3tc', 'etc1', 'pvrtc'];
+        var currentCompressedTextureType = null;
+        function getSupportedCompressedTextureType(gl) {
+            var availableExtensions = gl.getSupportedExtensions();
+            for (var i = 0; i < availableExtensions.length; i++) {
+                for (var j = 0; j < compressedTextureType.length; j++) {
+                    if (availableExtensions[i].indexOf(compressedTextureType[j]) > 0) {
+                        var extension = gl.getExtension(availableExtensions[i]);
+                        // 下面这句话必须在getExtension之后调用
+                        var formats = gl.getParameter(gl.COMPRESSED_TEXTURE_FORMATS);
+                        egret.log(formats);
+                        for (var key in extension) {
+                            egret.log(key, extension[key], '0x' + extension[key].toString(16));
+                        }
+                        return {
+                            type: compressedTextureType[j],
+                            extension: extension,
+                            formats: formats
+                        };
+                    }
+                }
+            }
+        }
+        /*
+        //let ext = null;
+        let compressedTextureType = ['s3tc', 'etc1', 'pvrtc'];
+        // COMPRESSED_RGB_PVRTC_4BPPV1_IMG
+        // COMPRESSED_RGB_PVRTC_2BPPV1_IMG
+        // COMPRESSED_RGBA_PVRTC_4BPPV1_IMG
+        // COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
+        let compressedTextureTypeEnumKey = ['COMPRESSED_RGB_S3TC_DXT1_EXT', 'COMPRESSED_RGB_ETC1_WEBGL', 'COMPRESSED_RGB_PVRTC_4BPPV1_IMG'];
+        let supportedCompressedTexture: boolean = false;
+        let currentCompressedTextureType = null;
+        let currentCompressedTextureFormat = null;
+    
+        function getSupportedCompressedTextureType(gl: WebGLRenderingContext) {
+            supportedCompressedTexture = false;
+            let availableExtensions = gl.getSupportedExtensions();
+            for (let i = 0; i < availableExtensions.length; i++) {
+                for (let j = 0; j < compressedTextureType.length; j++) {
+                    if (availableExtensions[i].indexOf(compressedTextureType[j]) > 0) {
+                        supportedCompressedTexture = true;
+                        let ext = gl.getExtension(availableExtensions[i]);
+                        // gl.getParameter(gl.COMPRESSED_TEXTURE_FORMATS) 必须在getExtension之后调用
+                        let formats = gl.getParameter(gl.COMPRESSED_TEXTURE_FORMATS);
+                        egret.log(formats);
+                        for (let key in ext) {
+                            for (let k = 0; k < compressedTextureTypeEnumKey.length; k++) {
+                                egret.log(key);
+                                if (key === compressedTextureTypeEnumKey[k]) {
+                                    currentCompressedTextureFormat = ext[key];
+                                    break;
+                                }
+                            }
+                        }
+                        currentCompressedTextureType = compressedTextureType[j];
+                    }
+                }
+            }
+            return currentCompressedTextureType;
+        }
+        */
         /**
          * @private
          * WebGL上下文对象，提供简单的绘图接口
@@ -5929,8 +5991,42 @@ var egret;
                 return null;
             };
             WebGLRenderContext.prototype.___createTextureFromCompressedData = function (bitmapData) {
-                egret.log('______createTextureFromCompressedData______');
-                return null;
+                var gl = this.context;
+                var texture = gl.createTexture();
+                if (!texture) {
+                    //先创建texture失败,然后lost事件才发出来..
+                    this.contextLost = true;
+                    return;
+                }
+                texture.glContext = gl;
+                if (!currentCompressedTextureType) {
+                    currentCompressedTextureType = getSupportedCompressedTextureType(gl);
+                    // let ext = gl.getExtension('WEBGL_compressed_texture_etc');
+                    // ext.COMPRESSED_RGBA8_ETC2_EAC;
+                }
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                //压缩的纹理上传
+                var ktx = bitmapData.ktx;
+                if (ktx.loadType === egret.KhronosTextureContainer.COMPRESSED_2D) {
+                    var dataOffset = egret.KhronosTextureContainer.HEADER_LEN + ktx.bytesOfKeyValueData;
+                    var width = ktx.pixelWidth;
+                    var height = ktx.pixelHeight;
+                    var mipmapCount = false ? ktx.numberOfMipmapLevels : 1;
+                    for (var level = 0; level < mipmapCount; level++) {
+                        var imageSize = new Int32Array(ktx.arrayBuffer, dataOffset, 1)[0]; // size per face, since not supporting array cubemaps
+                        dataOffset += 4; //image data starts from next multiple of 4 offset. Each face refers to same imagesize field above.
+                        for (var face = 0; face < ktx.numberOfFaces; face++) {
+                            var byteArray = new Uint8Array(ktx.arrayBuffer, dataOffset, imageSize);
+                            //ETC1_RGB8_OES
+                            gl.compressedTexImage2D(gl.TEXTURE_2D, 0, ktx.glInternalFormat, width, height, 0, byteArray);
+                            dataOffset += imageSize; // add size of the image for the next face/mipmap
+                            dataOffset += 3 - ((imageSize + 3) % 4); // add padding for odd sized image
+                        }
+                        width = Math.max(1.0, width * 0.5);
+                        height = Math.max(1.0, height * 0.5);
+                    }
+                }
+                return texture;
             };
             /**
              * 更新材质的bitmapData

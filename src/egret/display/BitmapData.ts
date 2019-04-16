@@ -34,13 +34,13 @@ namespace egret {
      * for file layout see https://www.khronos.org/opengles/sdk/tools/KTX/file_format_spec/
      */
     export class KhronosTextureContainer {
-        private static HEADER_LEN = 12 + (13 * 4); // identifier + header elements (not including key value meta-data pairs)
+        public static readonly HEADER_LEN = 12 + (13 * 4); // identifier + header elements (not including key value meta-data pairs)
 
         // load types
-        private static COMPRESSED_2D = 0; // uses a gl.compressedTexImage2D()
-        private static COMPRESSED_3D = 1; // uses a gl.compressedTexImage3D()
-        private static TEX_2D = 2; // uses a gl.texImage2D()
-        private static TEX_3D = 3; // uses a gl.texImage3D()
+        public static readonly COMPRESSED_2D = 0; // uses a gl.compressedTexImage2D()
+        public static readonly COMPRESSED_3D = 1; // uses a gl.compressedTexImage3D()
+        public static readonly TEX_2D = 2; // uses a gl.texImage2D()
+        public static readonly TEX_3D = 3; // uses a gl.texImage3D()
 
         // elements of the header
         /**
