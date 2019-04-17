@@ -53,6 +53,9 @@ namespace egret.web {
      * 网页加载完成，实例化页面中定义的Egret标签
      */
     function runEgret(options?: runEgretOptions): void {
+        if (DEBUG) {
+            console.log('runEgret engineVersion = ' + egret.Capabilities.engineVersion);
+        }
         if (isRunning) {
             return;
         }

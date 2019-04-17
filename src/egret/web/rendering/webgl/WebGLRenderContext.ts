@@ -383,8 +383,13 @@ namespace egret.web {
         }
 
         private _initGLContext(): void {
+
             // Caps
             this._gl = this.context;
+            const availableExtensions = this._gl.getSupportedExtensions();
+            if (DEBUG) {
+                console.log('availableExtensions = ' + availableExtensions);
+            }
             this._caps = new EngineCapabilities();
             this._caps.maxTexturesImageUnits = this._gl.getParameter(this._gl.MAX_TEXTURE_IMAGE_UNITS);
             this._caps.maxCombinedTexturesImageUnits = this._gl.getParameter(this._gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
@@ -587,6 +592,7 @@ namespace egret.web {
         * Current families are astc, dxt, pvrtc, etc2, & etc1.
         * @returns The extension selected.
         */
+       /*
         public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
             for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
                 for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
@@ -600,7 +606,7 @@ namespace egret.web {
             this._textureFormatInUse = null;
             return null;
         }
-
+        */
 
         private handleContextLost() {
             this.contextLost = true;

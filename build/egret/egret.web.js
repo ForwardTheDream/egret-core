@@ -3508,6 +3508,9 @@ var egret;
          * 网页加载完成，实例化页面中定义的Egret标签
          */
         function runEgret(options) {
+            if (true) {
+                console.log('runEgret engineVersion = ' + egret.Capabilities.engineVersion);
+            }
             if (isRunning) {
                 return;
             }
@@ -5864,6 +5867,10 @@ var egret;
             WebGLRenderContext.prototype._initGLContext = function () {
                 // Caps
                 this._gl = this.context;
+                var availableExtensions = this._gl.getSupportedExtensions();
+                if (true) {
+                    console.log('availableExtensions = ' + availableExtensions);
+                }
                 this._caps = new EngineCapabilities();
                 this._caps.maxTexturesImageUnits = this._gl.getParameter(this._gl.MAX_TEXTURE_IMAGE_UNITS);
                 this._caps.maxCombinedTexturesImageUnits = this._gl.getParameter(this._gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
@@ -6047,19 +6054,21 @@ var egret;
             * Current families are astc, dxt, pvrtc, etc2, & etc1.
             * @returns The extension selected.
             */
-            WebGLRenderContext.prototype.setTextureFormatToUse = function (formatsAvailable) {
-                for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
-                    for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
-                        if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
-                            return this._textureFormatInUse = this._texturesSupported[i];
-                        }
-                    }
-                }
-                // actively set format to nothing, to allow this to be called more than once
-                // and possibly fail the 2nd time
-                this._textureFormatInUse = null;
-                return null;
-            };
+            /*
+             public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
+                 for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
+                     for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
+                         if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
+                             return this._textureFormatInUse = this._texturesSupported[i];
+                         }
+                     }
+                 }
+                 // actively set format to nothing, to allow this to be called more than once
+                 // and possibly fail the 2nd time
+                 this._textureFormatInUse = null;
+                 return null;
+             }
+             */
             WebGLRenderContext.prototype.handleContextLost = function () {
                 this.contextLost = true;
             };
