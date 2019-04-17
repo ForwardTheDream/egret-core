@@ -5683,6 +5683,16 @@ var egret;
             }
             return canvas;
         }
+        /** refactor
+         * Class used to describe the capabilities of the engine relatively to the current browser
+         */
+        var EngineCapabilities = (function () {
+            function EngineCapabilities() {
+            }
+            return EngineCapabilities;
+        }());
+        web.EngineCapabilities = EngineCapabilities;
+        __reflect(EngineCapabilities.prototype, "egret.web.EngineCapabilities");
         /**
          * @private
          * WebGL上下文对象，提供简单的绘图接口
@@ -5694,6 +5704,9 @@ var egret;
                 this.projectionX = NaN;
                 this.projectionY = NaN;
                 this.contextLost = false;
+                this._webGLVersion = 1.0;
+                // Hardware supported Compressed Textures
+                this._texturesSupported = new Array();
                 this.$scissorState = false;
                 this.vertSize = 5;
                 this.surface = createCanvas(width, height);
@@ -5825,6 +5838,227 @@ var egret;
                 this.getWebGLContext();
                 var gl = this.context;
                 this.$maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+                this._initGLContext();
+            };
+            Object.defineProperty(WebGLRenderContext.prototype, "texturesSupported", {
+                //refactor
+                /**
+             * Gets the list of texture formats supported
+             */
+                get: function () {
+                    return this._texturesSupported;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(WebGLRenderContext.prototype, "textureFormatInUse", {
+                /**
+                 * Gets the list of texture formats in use
+                 */
+                get: function () {
+                    return this._textureFormatInUse;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            WebGLRenderContext.prototype._initGLContext = function () {
+                // Caps
+                this._gl = this.context;
+                this._caps = new EngineCapabilities();
+                this._caps.maxTexturesImageUnits = this._gl.getParameter(this._gl.MAX_TEXTURE_IMAGE_UNITS);
+                this._caps.maxCombinedTexturesImageUnits = this._gl.getParameter(this._gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+                this._caps.maxVertexTextureImageUnits = this._gl.getParameter(this._gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
+                this._caps.maxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
+                this._caps.maxCubemapTextureSize = this._gl.getParameter(this._gl.MAX_CUBE_MAP_TEXTURE_SIZE);
+                this._caps.maxRenderTextureSize = this._gl.getParameter(this._gl.MAX_RENDERBUFFER_SIZE);
+                this._caps.maxVertexAttribs = this._gl.getParameter(this._gl.MAX_VERTEX_ATTRIBS);
+                this._caps.maxVaryingVectors = this._gl.getParameter(this._gl.MAX_VARYING_VECTORS);
+                this._caps.maxFragmentUniformVectors = this._gl.getParameter(this._gl.MAX_FRAGMENT_UNIFORM_VECTORS);
+                this._caps.maxVertexUniformVectors = this._gl.getParameter(this._gl.MAX_VERTEX_UNIFORM_VECTORS);
+                // Infos
+                // this._glVersion = this._gl.getParameter(this._gl.VERSION);
+                // var rendererInfo: any = this._gl.getExtension("WEBGL_debug_renderer_info");
+                // if (rendererInfo != null) {
+                //     this._glRenderer = this._gl.getParameter(rendererInfo.UNMASKED_RENDERER_WEBGL);
+                //     this._glVendor = this._gl.getParameter(rendererInfo.UNMASKED_VENDOR_WEBGL);
+                // }
+                // if (!this._glVendor) {
+                //     this._glVendor = "Unknown vendor";
+                // }
+                // if (!this._glRenderer) {
+                //     this._glRenderer = "Unknown renderer";
+                // }
+                // // Constants
+                // this._gl.HALF_FLOAT_OES = 0x8D61;   // Half floating-point type (16-bit).
+                // if (this._gl.RGBA16F !== 0x881A) {
+                //     this._gl.RGBA16F = 0x881A;      // RGBA 16-bit floating-point color-renderable internal sized format.
+                // }
+                // if (this._gl.RGBA32F !== 0x8814) {
+                //     this._gl.RGBA32F = 0x8814;      // RGBA 32-bit floating-point color-renderable internal sized format.
+                // }
+                // if (this._gl.DEPTH24_STENCIL8 !== 35056) {
+                //     this._gl.DEPTH24_STENCIL8 = 35056;
+                // }
+                // Extensions
+                this._caps.standardDerivatives = this._webGLVersion > 1 || (this._gl.getExtension('OES_standard_derivatives') !== null);
+                this._caps.astc = this._gl.getExtension('WEBGL_compressed_texture_astc') || this._gl.getExtension('WEBKIT_WEBGL_compressed_texture_astc');
+                this._caps.s3tc = this._gl.getExtension('WEBGL_compressed_texture_s3tc') || this._gl.getExtension('WEBKIT_WEBGL_compressed_texture_s3tc');
+                this._caps.pvrtc = this._gl.getExtension('WEBGL_compressed_texture_pvrtc') || this._gl.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc');
+                this._caps.etc1 = this._gl.getExtension('WEBGL_compressed_texture_etc1') || this._gl.getExtension('WEBKIT_WEBGL_compressed_texture_etc1');
+                this._caps.etc2 = this._gl.getExtension('WEBGL_compressed_texture_etc') || this._gl.getExtension('WEBKIT_WEBGL_compressed_texture_etc') ||
+                    this._gl.getExtension('WEBGL_compressed_texture_es3_0'); // also a requirement of OpenGL ES 3
+                this._caps.textureAnisotropicFilterExtension = this._gl.getExtension('EXT_texture_filter_anisotropic') || this._gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic') || this._gl.getExtension('MOZ_EXT_texture_filter_anisotropic');
+                this._caps.maxAnisotropy = this._caps.textureAnisotropicFilterExtension ? this._gl.getParameter(this._caps.textureAnisotropicFilterExtension.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 0;
+                this._caps.uintIndices = this._webGLVersion > 1 || this._gl.getExtension('OES_element_index_uint') !== null;
+                this._caps.fragmentDepthSupported = this._webGLVersion > 1 || this._gl.getExtension('EXT_frag_depth') !== null;
+                this._caps.highPrecisionShaderSupported = false;
+                // this._caps.timerQuery = this._gl.getExtension('EXT_disjoint_timer_query_webgl2') || this._gl.getExtension("EXT_disjoint_timer_query");
+                // if (this._caps.timerQuery) {
+                //     if (this._webGLVersion === 1) {
+                //         this._gl.getQuery = (<any>this._caps.timerQuery).getQueryEXT.bind(this._caps.timerQuery);
+                //     }
+                //     this._caps.canUseTimestampForTimerQuery = this._gl.getQuery(this._caps.timerQuery.TIMESTAMP_EXT, this._caps.timerQuery.QUERY_COUNTER_BITS_EXT) > 0;
+                // }
+                // Checks if some of the format renders first to allow the use of webgl inspector.
+                this._caps.colorBufferFloat = this._webGLVersion > 1 && this._gl.getExtension('EXT_color_buffer_float');
+                this._caps.textureFloat = (this._webGLVersion > 1 || this._gl.getExtension('OES_texture_float')) ? true : false;
+                this._caps.textureFloatLinearFiltering = this._caps.textureFloat && this._gl.getExtension('OES_texture_float_linear') ? true : false;
+                //this._caps.textureFloatRender = this._caps.textureFloat && this._canRenderToFloatFramebuffer() ? true : false;
+                this._caps.textureHalfFloat = (this._webGLVersion > 1 || this._gl.getExtension('OES_texture_half_float')) ? true : false;
+                this._caps.textureHalfFloatLinearFiltering = (this._webGLVersion > 1 || (this._caps.textureHalfFloat && this._gl.getExtension('OES_texture_half_float_linear'))) ? true : false;
+                // if (this._webGLVersion > 1) {
+                //     this._gl.HALF_FLOAT_OES = 0x140B;
+                // }
+                //this._caps.textureHalfFloatRender = this._caps.textureHalfFloat && this._canRenderToHalfFloatFramebuffer();
+                this._caps.textureLOD = (this._webGLVersion > 1 || this._gl.getExtension('EXT_shader_texture_lod')) ? true : false;
+                this._caps.multiview = this._gl.getExtension('WEBGL_multiview');
+                // Draw buffers
+                // if (this._webGLVersion > 1) {
+                //     this._caps.drawBuffersExtension = true;
+                // } else {
+                //     var drawBuffersExtension = this._gl.getExtension('WEBGL_draw_buffers');
+                //     if (drawBuffersExtension !== null) {
+                //         this._caps.drawBuffersExtension = true;
+                //         this._gl.drawBuffers = drawBuffersExtension.drawBuffersWEBGL.bind(drawBuffersExtension);
+                //         this._gl.DRAW_FRAMEBUFFER = this._gl.FRAMEBUFFER;
+                //         for (var i = 0; i < 16; i++) {
+                //             (<any>this._gl)["COLOR_ATTACHMENT" + i + "_WEBGL"] = (<any>drawBuffersExtension)["COLOR_ATTACHMENT" + i + "_WEBGL"];
+                //         }
+                //     } else {
+                //         this._caps.drawBuffersExtension = false;
+                //     }
+                // }
+                // Shader compiler threads
+                this._caps.parallelShaderCompile = this._gl.getExtension('KHR_parallel_shader_compile');
+                // Depth Texture
+                // if (this._webGLVersion > 1) {
+                //     this._caps.depthTextureExtension = true;
+                // } else {
+                //     var depthTextureExtension = this._gl.getExtension('WEBGL_depth_texture');
+                //     if (depthTextureExtension != null) {
+                //         this._caps.depthTextureExtension = true;
+                //         this._gl.UNSIGNED_INT_24_8 = depthTextureExtension.UNSIGNED_INT_24_8_WEBGL;
+                //     }
+                // }
+                // Vertex array object
+                // if (this.disableVertexArrayObjects) {
+                //     this._caps.vertexArrayObject = false;
+                // } else if (this._webGLVersion > 1) {
+                //     this._caps.vertexArrayObject = true;
+                // } else {
+                //     var vertexArrayObjectExtension = this._gl.getExtension('OES_vertex_array_object');
+                //     if (vertexArrayObjectExtension != null) {
+                //         this._caps.vertexArrayObject = true;
+                //         this._gl.createVertexArray = vertexArrayObjectExtension.createVertexArrayOES.bind(vertexArrayObjectExtension);
+                //         this._gl.bindVertexArray = vertexArrayObjectExtension.bindVertexArrayOES.bind(vertexArrayObjectExtension);
+                //         this._gl.deleteVertexArray = vertexArrayObjectExtension.deleteVertexArrayOES.bind(vertexArrayObjectExtension);
+                //     } else {
+                //         this._caps.vertexArrayObject = false;
+                //     }
+                // }
+                // Instances count
+                // if (this._webGLVersion > 1) {
+                //     this._caps.instancedArrays = true;
+                // } else {
+                //     var instanceExtension = <ANGLE_instanced_arrays>this._gl.getExtension('ANGLE_instanced_arrays');
+                //     if (instanceExtension != null) {
+                //         this._caps.instancedArrays = true;
+                //         this._gl.drawArraysInstanced = instanceExtension.drawArraysInstancedANGLE.bind(instanceExtension);
+                //         this._gl.drawElementsInstanced = instanceExtension.drawElementsInstancedANGLE.bind(instanceExtension);
+                //         this._gl.vertexAttribDivisor = instanceExtension.vertexAttribDivisorANGLE.bind(instanceExtension);
+                //     } else {
+                //         this._caps.instancedArrays = false;
+                //     }
+                // }
+                // Intelligently add supported compressed formats in order to check for.
+                // Check for ASTC support first as it is most powerful and to be very cross platform.
+                // Next PVRTC & DXT, which are probably superior to ETC1/2.
+                // Likely no hardware which supports both PVR & DXT, so order matters little.
+                // ETC2 is newer and handles ETC1 (no alpha capability), so check for first.
+                if (this._caps.astc) {
+                    this.texturesSupported.push('-astc.ktx');
+                }
+                if (this._caps.s3tc) {
+                    this.texturesSupported.push('-dxt.ktx');
+                }
+                if (this._caps.pvrtc) {
+                    this.texturesSupported.push('-pvrtc.ktx');
+                }
+                if (this._caps.etc2) {
+                    this.texturesSupported.push('-etc2.ktx');
+                }
+                if (this._caps.etc1) {
+                    this.texturesSupported.push('-etc1.ktx');
+                }
+                if (this._gl.getShaderPrecisionFormat) {
+                    var vertex_highp = this._gl.getShaderPrecisionFormat(this._gl.VERTEX_SHADER, this._gl.HIGH_FLOAT);
+                    var fragment_highp = this._gl.getShaderPrecisionFormat(this._gl.FRAGMENT_SHADER, this._gl.HIGH_FLOAT);
+                    if (vertex_highp && fragment_highp) {
+                        this._caps.highPrecisionShaderSupported = vertex_highp.precision !== 0 && fragment_highp.precision !== 0;
+                    }
+                }
+                // Depth buffer
+                // this.setDepthBuffer(true);
+                // this.setDepthFunctionToLessOrEqual();
+                // this.setDepthWrite(true);
+                // // Texture maps
+                // this._maxSimultaneousTextures = this._caps.maxCombinedTexturesImageUnits;
+                // for (let slot = 0; slot < this._maxSimultaneousTextures; slot++) {
+                //     this._nextFreeTextureSlots.push(slot);
+                // }
+            };
+            /**
+            * Set the compressed texture format to use, based on the formats you have, and the formats
+            * supported by the hardware / browser.
+            *
+            * Khronos Texture Container (.ktx) files are used to support this. This format has the
+            * advantage of being specifically designed for OpenGL. Header elements directly correspond
+            * to API arguments needed to compressed textures. This puts the burden on the container
+            * generator to house the arcane code for determining these for current & future formats.
+            *
+            * for description see https://www.khronos.org/opengles/sdk/tools/KTX/
+            * for file layout see https://www.khronos.org/opengles/sdk/tools/KTX/file_format_spec/
+            *
+            * Note: The result of this call is not taken into account when a texture is base64.
+            *
+            * @param formatsAvailable defines the list of those format families you have created
+            * on your server. Syntax: '-' + format family + '.ktx'. (Case and order do not matter.)
+            *
+            * Current families are astc, dxt, pvrtc, etc2, & etc1.
+            * @returns The extension selected.
+            */
+            WebGLRenderContext.prototype.setTextureFormatToUse = function (formatsAvailable) {
+                for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
+                    for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
+                        if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
+                            return this._textureFormatInUse = this._texturesSupported[i];
+                        }
+                    }
+                }
+                // actively set format to nothing, to allow this to be called more than once
+                // and possibly fail the 2nd time
+                this._textureFormatInUse = null;
+                return null;
             };
             WebGLRenderContext.prototype.handleContextLost = function () {
                 this.contextLost = true;
