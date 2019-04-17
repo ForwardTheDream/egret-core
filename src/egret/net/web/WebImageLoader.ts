@@ -419,6 +419,7 @@ namespace egret.web {
                     compressedData.byteArray = byteArray;
                     compressedData.face = face;
                     compressedData.level = level;
+                    bitmapCompressedData.push(compressedData);
                     // const engine = texture.getEngine();
                     // engine._uploadCompressedDataToTextureDirectly(texture, this.glInternalFormat, width, height, byteArray, face, level);
                     ///
@@ -427,6 +428,12 @@ namespace egret.web {
                 }
                 width = Math.max(1.0, width * 0.5);
                 height = Math.max(1.0, height * 0.5);
+            }
+            ////hack
+            if (bitmapCompressedData.length === 1) {
+                const v = bitmapCompressedData[0];
+                bitmapData.width = v.width;
+                bitmapData.height = v.height;
             }
         }
     }
@@ -627,7 +634,7 @@ namespace egret.web {
                 //egret.log('bufferData = ' + bufferData);
                 const loader = interalLoader;
                 const buffer = bufferData;
-                const bitmapData = new egret.BitmapData(null);
+                const bitmapData = new egret.BitmapData(bufferData);
                 self.data = bitmapData;
                 //const bitmapCompressedData = bitmapData.bitmapCompressedData;                
                 // processing for non-image formats

@@ -593,21 +593,21 @@ namespace egret.web {
         * Current families are astc, dxt, pvrtc, etc2, & etc1.
         * @returns The extension selected.
         */
-       /*
-        public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
-            for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
-                for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
-                    if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
-                        return this._textureFormatInUse = this._texturesSupported[i];
-                    }
-                }
-            }
-            // actively set format to nothing, to allow this to be called more than once
-            // and possibly fail the 2nd time
-            this._textureFormatInUse = null;
-            return null;
-        }
-        */
+        /*
+         public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
+             for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
+                 for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
+                     if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
+                         return this._textureFormatInUse = this._texturesSupported[i];
+                     }
+                 }
+             }
+             // actively set format to nothing, to allow this to be called more than once
+             // and possibly fail the 2nd time
+             this._textureFormatInUse = null;
+             return null;
+         }
+         */
 
         private handleContextLost() {
             this.contextLost = true;
@@ -726,8 +726,25 @@ namespace egret.web {
             return texture;
         }
 
-        private createTextureFromCompressedData(data, width, height, levels, internalFormat): WebGLTexture {
+        private createTextureFromCompressedData(data: Uint8Array, width: number, height: number, levels: number, internalFormat: number): WebGLTexture {
             return null;
+            let gl: any = this.context;
+            let texture = gl.createTexture();
+            if (!texture) {
+                //先创建texture失败,然后lost事件才发出来..
+                this.contextLost = true;
+                return;
+            }
+            texture.glContext = gl;
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            //gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+            //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmapData);
+            gl.compressedTexImage2D(gl.TEXTURE_2D, levels, internalFormat, width, height, 0, data);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            return texture;
         }
 
         /**
@@ -745,14 +762,23 @@ namespace egret.web {
          */
         public getWebGLTexture(bitmapData: BitmapData): WebGLTexture {
             if (!bitmapData.webGLTexture) {
-                if (bitmapData.format == "image") {
+                if (bitmapData.format == "image" && bitmapData.bitmapCompressedData.length === 0) {
                     bitmapData.webGLTexture = this.createTexture(bitmapData.source);
                 }
-                else if (bitmapData.format == "pvr") {//todo 需要支持其他格式
-                    bitmapData.webGLTexture = this.createTextureFromCompressedData(bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format);
+                else if (bitmapData.format == "pvr" || bitmapData.bitmapCompressedData.length > 0) {//todo 需要支持其他格式
+                    const bitmapCompressedData = bitmapData.bitmapCompressedData[0];
+                    bitmapData.webGLTexture = this.createTextureFromCompressedData(
+                        bitmapCompressedData.byteArray,
+                        bitmapCompressedData.width,
+                        bitmapCompressedData.height,
+                        bitmapCompressedData.level,
+                        bitmapCompressedData.glInternalFormat
+                        //bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format
+                    );
                 }
                 if (bitmapData.$deleteSource && bitmapData.webGLTexture) {
                     bitmapData.source = null;
+                    bitmapData.bitmapCompressedData.length = 0;
                 }
                 if (bitmapData.webGLTexture) {
                     //todo 默认值

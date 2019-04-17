@@ -2126,6 +2126,7 @@ var egret;
                         compressedData.byteArray = byteArray;
                         compressedData.face = face;
                         compressedData.level = level;
+                        bitmapCompressedData.push(compressedData);
                         // const engine = texture.getEngine();
                         // engine._uploadCompressedDataToTextureDirectly(texture, this.glInternalFormat, width, height, byteArray, face, level);
                         ///
@@ -2134,6 +2135,12 @@ var egret;
                     }
                     width = Math.max(1.0, width * 0.5);
                     height = Math.max(1.0, height * 0.5);
+                }
+                ////hack
+                if (bitmapCompressedData.length === 1) {
+                    var v = bitmapCompressedData[0];
+                    bitmapData.width = v.width;
+                    bitmapData.height = v.height;
                 }
             };
             KhronosTextureContainer.HEADER_LEN = 12 + (13 * 4); // identifier + header elements (not including key value meta-data pairs)
@@ -2301,7 +2308,7 @@ var egret;
                     //egret.log('bufferData = ' + bufferData);
                     var loader = interalLoader;
                     var buffer = bufferData;
-                    var bitmapData = new egret.BitmapData(null);
+                    var bitmapData = new egret.BitmapData(bufferData);
                     self.data = bitmapData;
                     //const bitmapCompressedData = bitmapData.bitmapCompressedData;                
                     // processing for non-image formats
@@ -6551,6 +6558,23 @@ var egret;
             };
             WebGLRenderContext.prototype.createTextureFromCompressedData = function (data, width, height, levels, internalFormat) {
                 return null;
+                var gl = this.context;
+                var texture = gl.createTexture();
+                if (!texture) {
+                    //先创建texture失败,然后lost事件才发出来..
+                    this.contextLost = true;
+                    return;
+                }
+                texture.glContext = gl;
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                //gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+                //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmapData);
+                gl.compressedTexImage2D(gl.TEXTURE_2D, levels, internalFormat, width, height, 0, data);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                return texture;
             };
             /**
              * 更新材质的bitmapData
@@ -6566,14 +6590,18 @@ var egret;
              */
             WebGLRenderContext.prototype.getWebGLTexture = function (bitmapData) {
                 if (!bitmapData.webGLTexture) {
-                    if (bitmapData.format == "image") {
+                    if (bitmapData.format == "image" && bitmapData.bitmapCompressedData.length === 0) {
                         bitmapData.webGLTexture = this.createTexture(bitmapData.source);
                     }
-                    else if (bitmapData.format == "pvr") {
-                        bitmapData.webGLTexture = this.createTextureFromCompressedData(bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format);
+                    else if (bitmapData.format == "pvr" || bitmapData.bitmapCompressedData.length > 0) {
+                        var bitmapCompressedData = bitmapData.bitmapCompressedData[0];
+                        bitmapData.webGLTexture = this.createTextureFromCompressedData(bitmapCompressedData.byteArray, bitmapCompressedData.width, bitmapCompressedData.height, bitmapCompressedData.level, bitmapCompressedData.glInternalFormat
+                        //bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format
+                        );
                     }
                     if (bitmapData.$deleteSource && bitmapData.webGLTexture) {
                         bitmapData.source = null;
+                        bitmapData.bitmapCompressedData.length = 0;
                     }
                     if (bitmapData.webGLTexture) {
                         //todo 默认值
