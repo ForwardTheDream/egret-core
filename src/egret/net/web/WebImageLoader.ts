@@ -128,9 +128,15 @@ namespace egret.web {
          * @returns true if the loader can load the specified file
          */
         public canLoad(extension: string, textureFormatInUse: Nullable<string>, fallback: Nullable<InternalTexture>, isBase64: boolean, isBuffer: boolean): boolean {
+            ///临时hack
+            if (extension.indexOf('.ktx') !== -1) {
+                return true;
+            }
+            /*refactor
             if (textureFormatInUse && !isBase64 && !fallback && !isBuffer) {
                 return true;
             }
+            */
             return false;
         }
 
@@ -202,16 +208,12 @@ namespace egret.web {
          */
         public loadData(data: ArrayBuffer, texture: InternalTexture,
             callback: (width: number, height: number, loadMipmap: boolean, isCompressed: boolean, done: () => void, loadFailed: boolean) => void): void {
-
-            /*
             // Need to invert vScale as invertY via UNPACK_FLIP_Y_WEBGL is not supported by compressed texture
-            texture._invertVScale = !texture.invertY;
+            //texture._invertVScale = !texture.invertY;
             var ktx = new KhronosTextureContainer(data, 1);
-
             callback(ktx.pixelWidth, ktx.pixelHeight, false, true, () => {
-                ktx.uploadLevels(texture, texture.generateMipMaps);
+                ktx.uploadLevels(texture, /*texture.generateMipMaps*/false);
             }, ktx.isInvalid);
-            */
         }
     }
 
@@ -551,17 +553,13 @@ namespace egret.web {
             let fallback = null;
             let texture = fallback ? fallback : new InternalTexture;//(this, InternalTexture.DATASOURCE_URL);
             let forcedExtension = false;
-            let buffer = false;
+            let buffer = null;
             let _textureFormatInUse = egret.web.WebGLRenderContext.getInstance(0, 0).textureFormatInUse;//textureFormatInUse();
             //let texture = fallback ? fallback : new InternalTexture(this, InternalTexture.DATASOURCE_URL);
 
             // establish the file extension, if possible
             var lastDot = url.lastIndexOf('.');
             let extension = forcedExtension ? forcedExtension : (lastDot > -1 ? url.substring(lastDot).toLowerCase() : "");
-            ///???
-            if (extension === 'ktx') {
-                extension = '';
-            }
             ////
             let loader: Nullable<IInternalTextureLoader> = null;
             for (let availableLoader of /*Engine.*/_TextureLoaders) {
@@ -595,6 +593,7 @@ namespace egret.web {
                     // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
                     //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
                     // });
+                    callback(buffer as ArrayBuffer);
                 } else {
                     callback(buffer as ArrayBuffer);
                 }

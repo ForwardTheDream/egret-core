@@ -1912,9 +1912,15 @@ var egret;
              * @returns true if the loader can load the specified file
              */
             _KTXTextureLoader.prototype.canLoad = function (extension, textureFormatInUse, fallback, isBase64, isBuffer) {
+                ///临时hack
+                if (extension.indexOf('.ktx') !== -1) {
+                    return true;
+                }
+                /*refactor
                 if (textureFormatInUse && !isBase64 && !fallback && !isBuffer) {
                     return true;
                 }
+                */
                 return false;
             };
             /**
@@ -1981,15 +1987,12 @@ var egret;
              * @param callback defines the method to call once ready to upload
              */
             _KTXTextureLoader.prototype.loadData = function (data, texture, callback) {
-                /*
                 // Need to invert vScale as invertY via UNPACK_FLIP_Y_WEBGL is not supported by compressed texture
-                texture._invertVScale = !texture.invertY;
+                //texture._invertVScale = !texture.invertY;
                 var ktx = new KhronosTextureContainer(data, 1);
-    
-                callback(ktx.pixelWidth, ktx.pixelHeight, false, true, () => {
-                    ktx.uploadLevels(texture, texture.generateMipMaps);
+                callback(ktx.pixelWidth, ktx.pixelHeight, false, true, function () {
+                    ktx.uploadLevels(texture, /*texture.generateMipMaps*/ false);
                 }, ktx.isInvalid);
-                */
             };
             return _KTXTextureLoader;
         }());
@@ -2224,16 +2227,12 @@ var egret;
                 var fallback = null;
                 var texture = fallback ? fallback : new InternalTexture; //(this, InternalTexture.DATASOURCE_URL);
                 var forcedExtension = false;
-                var buffer = false;
+                var buffer = null;
                 var _textureFormatInUse = egret.web.WebGLRenderContext.getInstance(0, 0).textureFormatInUse; //textureFormatInUse();
                 //let texture = fallback ? fallback : new InternalTexture(this, InternalTexture.DATASOURCE_URL);
                 // establish the file extension, if possible
                 var lastDot = url.lastIndexOf('.');
                 var extension = forcedExtension ? forcedExtension : (lastDot > -1 ? url.substring(lastDot).toLowerCase() : "");
-                ///???
-                if (extension === 'ktx') {
-                    extension = '';
-                }
                 ////
                 var loader = null;
                 for (var _i = 0, /*Engine.*/ _TextureLoaders_1 = _TextureLoaders; _i < _TextureLoaders_1.length; _i++) {
@@ -2267,6 +2266,7 @@ var egret;
                         // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
                         //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
                         // });
+                        callback(buffer);
                     }
                     else {
                         callback(buffer);
