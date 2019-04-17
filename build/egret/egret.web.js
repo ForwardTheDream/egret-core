@@ -1986,12 +1986,15 @@ var egret;
              * @param texture defines the BabylonJS internal texture
              * @param callback defines the method to call once ready to upload
              */
-            _KTXTextureLoader.prototype.loadData = function (data, texture, callback) {
+            _KTXTextureLoader.prototype.loadData = function (data, texture, bitmapData, callback) {
                 // Need to invert vScale as invertY via UNPACK_FLIP_Y_WEBGL is not supported by compressed texture
                 //texture._invertVScale = !texture.invertY;
                 var ktx = new KhronosTextureContainer(data, 1);
+                //
+                ktx.uploadLevels(texture, bitmapData, /*texture.generateMipMaps*/ false);
+                // old
                 callback(ktx.pixelWidth, ktx.pixelHeight, false, true, function () {
-                    ktx.uploadLevels(texture, /*texture.generateMipMaps*/ false);
+                    //ktx.uploadLevels(texture, bitmapData,/*texture.generateMipMaps*/false);
                 }, ktx.isInvalid);
             };
             return _KTXTextureLoader;
@@ -2085,17 +2088,26 @@ var egret;
              * It is assumed that the texture has already been created & is currently bound
              * @hidden
              */
-            KhronosTextureContainer.prototype.uploadLevels = function (texture, loadMipmaps) {
+            KhronosTextureContainer.prototype.uploadLevels = function (texture, bitmapData, loadMipmaps) {
+                /*
                 switch (this.loadType) {
                     case KhronosTextureContainer.COMPRESSED_2D:
-                        this._upload2DCompressedLevels(texture, loadMipmaps);
+                        this._upload2DCompressedLevels(texture, bitmapData, loadMipmaps);
                         break;
+    
                     case KhronosTextureContainer.TEX_2D:
                     case KhronosTextureContainer.COMPRESSED_3D:
                     case KhronosTextureContainer.TEX_3D:
                 }
+                */
+                if (this.loadType === KhronosTextureContainer.COMPRESSED_2D) {
+                    this._upload2DCompressedLevels(texture, bitmapData, loadMipmaps);
+                }
             };
-            KhronosTextureContainer.prototype._upload2DCompressedLevels = function (texture, loadMipmaps) {
+            KhronosTextureContainer.prototype._upload2DCompressedLevels = function (texture, bitmapData, loadMipmaps) {
+                ///
+                var bitmapCompressedData = bitmapData.bitmapCompressedData;
+                bitmapCompressedData.length = 0;
                 // initialize width & height for level 1
                 var dataOffset = KhronosTextureContainer.HEADER_LEN + this.bytesOfKeyValueData;
                 var width = this.pixelWidth;
@@ -2106,8 +2118,17 @@ var egret;
                     dataOffset += 4; //image data starts from next multiple of 4 offset. Each face refers to same imagesize field above.
                     for (var face = 0; face < this.numberOfFaces; face++) {
                         var byteArray = new Uint8Array(this.arrayBuffer, dataOffset, imageSize);
+                        ////
+                        var compressedData = new egret.BitmapCompressedData;
+                        compressedData.glInternalFormat = this.glInternalFormat;
+                        compressedData.width = width;
+                        compressedData.height = height;
+                        compressedData.byteArray = byteArray;
+                        compressedData.face = face;
+                        compressedData.level = level;
                         // const engine = texture.getEngine();
                         // engine._uploadCompressedDataToTextureDirectly(texture, this.glInternalFormat, width, height, byteArray, face, level);
+                        ///
                         dataOffset += imageSize; // add size of the image for the next face/mipmap
                         dataOffset += 3 - ((imageSize + 3) % 4); // add padding for odd sized image
                     }
@@ -2221,27 +2242,7 @@ var egret;
             /**
              * @private
              */
-            WebImageLoader.prototype._loadInternalTexture = function (src) {
-                var _this = this;
-                var request = new egret.HttpRequest();
-                request.responseType = egret.HttpResponseType.ARRAY_BUFFER;
-                request.open(/*RES.getVirtualUrl(resource.root + resource.url)*/ src, "get");
-                request.send();
-                return new Promise(function (resolve, reject) {
-                    ///
-                    var loader = request;
-                    ////
-                    var onSuccess = function () {
-                        var textureData = loader['data'] ? loader['data'] : loader['response'];
-                        resolve(textureData);
-                    };
-                    var onError = function () {
-                        //let e = new egret.ResourceManagerError(1001, resource.url);
-                        reject(0);
-                    };
-                    loader.addEventListener(egret.Event.COMPLETE, onSuccess, _this);
-                    loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, _this);
-                });
+            WebImageLoader.prototype._getInternalTextureLoader = function (src) {
                 ////refactor
                 var url = String(src); // assign a new string, so that the original is still available in case of fallback
                 var fromData = url.substr(0, 5) === "data:";
@@ -2269,35 +2270,73 @@ var egret;
                 if (loader) {
                     url = loader.transformUrl(url, /*this.*/ _textureFormatInUse);
                 }
-                // processing for non-image formats
-                if (loader) {
-                    var callback = function (data) {
-                        loader.loadData(data, texture, function (width, height, loadMipmap, isCompressed, done, loadFailed) {
-                            if (loadFailed) {
-                                //onInternalError("TextureLoader failed to load data");
-                            }
-                            else {
-                                /*
-                                this._prepareWebGLTexture(texture, scene, width, height, texture.invertY, !loadMipmap, isCompressed, () => {
-                                    done();
-                                    return false;
-                                }, samplingMode);
-                                */
-                            }
-                        });
-                    };
-                    if (!buffer) {
-                        // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
-                        //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
-                        // });
-                        callback(buffer);
-                    }
-                    else {
-                        callback(buffer);
-                    }
+                return loader;
+            };
+            WebImageLoader.prototype._loadInternalTexture = function (src) {
+                var _this = this;
+                var interalLoader = this._getInternalTextureLoader(src);
+                if (!interalLoader) {
+                    return false;
                 }
-                ////
-                //return !!loader;
+                var request = new egret.HttpRequest();
+                request.responseType = egret.HttpResponseType.ARRAY_BUFFER;
+                request.open(/*RES.getVirtualUrl(resource.root + resource.url)*/ src, "get");
+                request.send();
+                var self = this;
+                return new Promise(function (resolve, reject) {
+                    ///hack
+                    var loader = request;
+                    ////
+                    var onSuccess = function () {
+                        var bitmapData = loader['data'] ? loader['data'] : loader['response'];
+                        resolve(bitmapData);
+                    };
+                    var onError = function () {
+                        //let e = new egret.ResourceManagerError(1001, resource.url);
+                        reject(0);
+                    };
+                    loader.addEventListener(egret.Event.COMPLETE, onSuccess, _this);
+                    loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, _this);
+                }).then(function (bufferData) {
+                    console.log('bufferData = ' + bufferData);
+                    var loader = interalLoader;
+                    var buffer = bufferData;
+                    var bitmapData = new egret.BitmapData(null);
+                    self.data = bitmapData;
+                    //const bitmapCompressedData = bitmapData.bitmapCompressedData;                
+                    // processing for non-image formats
+                    if (loader) {
+                        var callback = function (data) {
+                            loader.loadData(data, /*texture*/ null, bitmapData, function (width, height, loadMipmap, isCompressed, done, loadFailed) {
+                                if (loadFailed) {
+                                    //onInternalError("TextureLoader failed to load data");
+                                    self.dispatchIOError(src);
+                                }
+                                else {
+                                    console.log('this._prepareWebGLTexture');
+                                    window.setTimeout(function () {
+                                        self.dispatchEventWith(egret.Event.COMPLETE);
+                                    }, 0);
+                                    /*
+                                    this._prepareWebGLTexture(texture, scene, width, height, texture.invertY, !loadMipmap, isCompressed, () => {
+                                        done();
+                                        return false;
+                                    }, samplingMode);
+                                    */
+                                }
+                            });
+                        };
+                        if (!buffer) {
+                            // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
+                            //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
+                            // });
+                            //callback(buffer as ArrayBuffer);
+                        }
+                        else {
+                            callback(buffer);
+                        }
+                    }
+                });
             };
             WebImageLoader.prototype._loadImage = function (src) {
                 var image = new Image();

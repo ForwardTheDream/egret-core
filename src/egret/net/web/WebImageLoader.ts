@@ -98,7 +98,7 @@ namespace egret.web {
          * @param texture defines the BabylonJS internal texture
          * @param callback defines the method to call once ready to upload
          */
-        loadData(data: ArrayBuffer, texture: InternalTexture,
+        loadData(data: ArrayBuffer, texture: InternalTexture, bitmapData: BitmapData,
             callback: (width: number, height: number, loadMipmap: boolean, isCompressed: boolean, done: () => void, loadFailed?: boolean) => void): void;
     }
     // import { KhronosTextureContainer } from "../../../Misc/khronosTextureContainer";
@@ -206,13 +206,17 @@ namespace egret.web {
          * @param texture defines the BabylonJS internal texture
          * @param callback defines the method to call once ready to upload
          */
-        public loadData(data: ArrayBuffer, texture: InternalTexture,
+        public loadData(data: ArrayBuffer, texture: InternalTexture, bitmapData: BitmapData,
             callback: (width: number, height: number, loadMipmap: boolean, isCompressed: boolean, done: () => void, loadFailed: boolean) => void): void {
             // Need to invert vScale as invertY via UNPACK_FLIP_Y_WEBGL is not supported by compressed texture
             //texture._invertVScale = !texture.invertY;
-            var ktx = new KhronosTextureContainer(data, 1);
+            const ktx = new KhronosTextureContainer(data, 1);
+
+            //
+            ktx.uploadLevels(texture, bitmapData,/*texture.generateMipMaps*/false);
+            // old
             callback(ktx.pixelWidth, ktx.pixelHeight, false, true, () => {
-                ktx.uploadLevels(texture, /*texture.generateMipMaps*/false);
+                //ktx.uploadLevels(texture, bitmapData,/*texture.generateMipMaps*/false);
             }, ktx.isInvalid);
         }
     }
@@ -373,19 +377,29 @@ namespace egret.web {
          * It is assumed that the texture has already been created & is currently bound
          * @hidden
          */
-        public uploadLevels(texture: InternalTexture, loadMipmaps: boolean): void {
+        public uploadLevels(texture: InternalTexture, bitmapData: BitmapData, loadMipmaps: boolean): void {
+            /*
             switch (this.loadType) {
                 case KhronosTextureContainer.COMPRESSED_2D:
-                    this._upload2DCompressedLevels(texture, loadMipmaps);
+                    this._upload2DCompressedLevels(texture, bitmapData, loadMipmaps);
                     break;
 
                 case KhronosTextureContainer.TEX_2D:
                 case KhronosTextureContainer.COMPRESSED_3D:
                 case KhronosTextureContainer.TEX_3D:
             }
+            */
+            if (this.loadType === KhronosTextureContainer.COMPRESSED_2D) {
+                this._upload2DCompressedLevels(texture, bitmapData, loadMipmaps);
+            }
         }
 
-        private _upload2DCompressedLevels(texture: InternalTexture, loadMipmaps: boolean): void {
+        private _upload2DCompressedLevels(texture: InternalTexture, bitmapData: BitmapData, loadMipmaps: boolean): void {
+
+            ///
+            const bitmapCompressedData = bitmapData.bitmapCompressedData;
+            bitmapCompressedData.length = 0;
+
             // initialize width & height for level 1
             var dataOffset = KhronosTextureContainer.HEADER_LEN + this.bytesOfKeyValueData;
             var width = this.pixelWidth;
@@ -397,10 +411,17 @@ namespace egret.web {
                 dataOffset += 4; //image data starts from next multiple of 4 offset. Each face refers to same imagesize field above.
                 for (var face = 0; face < this.numberOfFaces; face++) {
                     var byteArray = new Uint8Array(this.arrayBuffer, dataOffset, imageSize);
-
+                    ////
+                    const compressedData = new BitmapCompressedData;
+                    compressedData.glInternalFormat = this.glInternalFormat;
+                    compressedData.width = width;
+                    compressedData.height = height;
+                    compressedData.byteArray = byteArray;
+                    compressedData.face = face;
+                    compressedData.level = level;
                     // const engine = texture.getEngine();
                     // engine._uploadCompressedDataToTextureDirectly(texture, this.glInternalFormat, width, height, byteArray, face, level);
-
+                    ///
                     dataOffset += imageSize; // add size of the image for the next face/mipmap
                     dataOffset += 3 - ((imageSize + 3) % 4); // add padding for odd sized image
                 }
@@ -547,27 +568,8 @@ namespace egret.web {
         /**
          * @private
          */
-        private _loadInternalTexture(src: string) {
-            var request: egret.HttpRequest = new egret.HttpRequest();
-            request.responseType = egret.HttpResponseType.ARRAY_BUFFER;
-            request.open(/*RES.getVirtualUrl(resource.root + resource.url)*/src, "get");
-            request.send();
-            return new Promise((resolve, reject) => {
-                ///
-                let loader = request;
-                ////
-                let onSuccess = () => {
-                    let textureData = loader['data'] ? loader['data'] : loader['response'];
-                    resolve(textureData);
-                }
-                let onError = () => {
-                    //let e = new egret.ResourceManagerError(1001, resource.url);
-                    reject(0);
-                }
-                loader.addEventListener(egret.Event.COMPLETE, onSuccess, this);
-                loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, this);
-            });
 
+        private _getInternalTextureLoader(src: string): Nullable<IInternalTextureLoader> {
             ////refactor
             let url = String(src); // assign a new string, so that the original is still available in case of fallback
             let fromData = url.substr(0, 5) === "data:";
@@ -595,35 +597,71 @@ namespace egret.web {
             if (loader) {
                 url = loader.transformUrl(url, /*this.*/_textureFormatInUse);
             }
-
-            // processing for non-image formats
-            if (loader) {
-                var callback = (data: string | ArrayBuffer) => {
-                    loader!.loadData(data as ArrayBuffer, texture, (width: number, height: number, loadMipmap: boolean, isCompressed: boolean, done: () => void, loadFailed) => {
-                        if (loadFailed) {
-                            //onInternalError("TextureLoader failed to load data");
-                        } else {
-                            /*
-                            this._prepareWebGLTexture(texture, scene, width, height, texture.invertY, !loadMipmap, isCompressed, () => {
-                                done();
-                                return false;
-                            }, samplingMode);
-                            */
-                        }
-                    });
-                };
-
-                if (!buffer) {
-                    // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
-                    //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
-                    // });
-                    callback(buffer as ArrayBuffer);
-                } else {
-                    callback(buffer as ArrayBuffer);
-                }
+            return loader;
+        }
+        private _loadInternalTexture(src: string) {
+            const interalLoader = this._getInternalTextureLoader(src);
+            if (!interalLoader) {
+                return false;
             }
-            ////
-            //return !!loader;
+            const request: egret.HttpRequest = new egret.HttpRequest();
+            request.responseType = egret.HttpResponseType.ARRAY_BUFFER;
+            request.open(/*RES.getVirtualUrl(resource.root + resource.url)*/src, "get");
+            request.send();
+            let self = this;
+            return new Promise((resolve, reject) => {
+                ///hack
+                const loader = request;
+                ////
+                let onSuccess = () => {
+                    const bitmapData = loader['data'] ? loader['data'] : loader['response'];
+                    resolve(bitmapData);
+                }
+                let onError = () => {
+                    //let e = new egret.ResourceManagerError(1001, resource.url);
+                    reject(0);
+                }
+                loader.addEventListener(egret.Event.COMPLETE, onSuccess, this);
+                loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, this);
+            }).then((bufferData) => {
+                console.log('bufferData = ' + bufferData);
+                const loader = interalLoader;
+                const buffer = bufferData;
+                const bitmapData = new egret.BitmapData(null);
+                self.data = bitmapData;
+                //const bitmapCompressedData = bitmapData.bitmapCompressedData;                
+                // processing for non-image formats
+                if (loader) {
+                    var callback = (data: string | ArrayBuffer) => {
+                        loader!.loadData(data as ArrayBuffer, /*texture*/null, bitmapData, (width: number, height: number, loadMipmap: boolean, isCompressed: boolean, done: () => void, loadFailed) => {
+                            if (loadFailed) {
+                                //onInternalError("TextureLoader failed to load data");
+                                self.dispatchIOError(src);
+                            } else {
+                                //console.log('this._prepareWebGLTexture');
+                                window.setTimeout(function (): void {
+                                    self.dispatchEventWith(Event.COMPLETE);
+                                }, 0);
+                                /*
+                                this._prepareWebGLTexture(texture, scene, width, height, texture.invertY, !loadMipmap, isCompressed, () => {
+                                    done();
+                                    return false;
+                                }, samplingMode);
+                                */
+                            }
+                        });
+                    };
+
+                    if (!buffer) {
+                        // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
+                        //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
+                        // });
+                        //callback(buffer as ArrayBuffer);
+                    } else {
+                        callback(buffer as ArrayBuffer);
+                    }
+                }
+            });
         }
 
         private _loadImage(src: string): void {
