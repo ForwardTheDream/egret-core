@@ -2298,7 +2298,7 @@ var egret;
                     loader.addEventListener(egret.Event.COMPLETE, onSuccess, _this);
                     loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, _this);
                 }).then(function (bufferData) {
-                    console.log('bufferData = ' + bufferData);
+                    //egret.log('bufferData = ' + bufferData);
                     var loader = interalLoader;
                     var buffer = bufferData;
                     var bitmapData = new egret.BitmapData(null);
@@ -2313,7 +2313,7 @@ var egret;
                                     self.dispatchIOError(src);
                                 }
                                 else {
-                                    console.log('this._prepareWebGLTexture');
+                                    //console.log('this._prepareWebGLTexture');
                                     window.setTimeout(function () {
                                         self.dispatchEventWith(egret.Event.COMPLETE);
                                     }, 0);
@@ -3889,7 +3889,7 @@ var egret;
          */
         function runEgret(options) {
             if (true) {
-                console.log('runEgret engineVersion = ' + egret.Capabilities.engineVersion);
+                egret.log('runEgret engineVersion = ' + egret.Capabilities.engineVersion);
             }
             if (isRunning) {
                 return;
@@ -6250,7 +6250,7 @@ var egret;
                 this._gl = this.context;
                 var availableExtensions = this._gl.getSupportedExtensions();
                 if (true) {
-                    console.log('availableExtensions = ' + availableExtensions);
+                    egret.log('availableExtensions = ' + availableExtensions);
                 }
                 this._caps = new EngineCapabilities();
                 this._caps.maxTexturesImageUnits = this._gl.getParameter(this._gl.MAX_TEXTURE_IMAGE_UNITS);

@@ -54,7 +54,7 @@ namespace egret.web {
      */
     function runEgret(options?: runEgretOptions): void {
         if (DEBUG) {
-            console.log('runEgret engineVersion = ' + egret.Capabilities.engineVersion);
+            egret.log('runEgret engineVersion = ' + egret.Capabilities.engineVersion);
         }
         if (isRunning) {
             return;

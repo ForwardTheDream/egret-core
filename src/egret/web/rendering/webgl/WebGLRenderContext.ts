@@ -389,7 +389,7 @@ namespace egret.web {
             this._gl = this.context;
             const availableExtensions = this._gl.getSupportedExtensions();
             if (DEBUG) {
-                console.log('availableExtensions = ' + availableExtensions);
+                egret.log('availableExtensions = ' + availableExtensions);
             }
             this._caps = new EngineCapabilities();
             this._caps.maxTexturesImageUnits = this._gl.getParameter(this._gl.MAX_TEXTURE_IMAGE_UNITS);

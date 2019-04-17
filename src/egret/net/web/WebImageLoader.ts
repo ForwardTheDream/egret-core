@@ -624,7 +624,7 @@ namespace egret.web {
                 loader.addEventListener(egret.Event.COMPLETE, onSuccess, this);
                 loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, this);
             }).then((bufferData) => {
-                console.log('bufferData = ' + bufferData);
+                //egret.log('bufferData = ' + bufferData);
                 const loader = interalLoader;
                 const buffer = bufferData;
                 const bitmapData = new egret.BitmapData(null);
