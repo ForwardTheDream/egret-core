@@ -519,7 +519,9 @@ namespace egret.web {
                 request.send();
             }
             else {
-                this.loadImage(url);
+                if (!this._loadInternalTexture(url)) {
+                    this._loadImage(url);
+                }
             }
         }
 
@@ -529,7 +531,9 @@ namespace egret.web {
         private onBlobLoaded(event: egret.Event): void {
             let blob: Blob = this.request.response;
             this.request = undefined;
-            this.loadImage(winURL.createObjectURL(blob));
+            if (!this._loadInternalTexture(winURL.createObjectURL(blob))) {
+                this._loadImage(winURL.createObjectURL(blob));
+            }
         }
 
         /**
@@ -543,7 +547,27 @@ namespace egret.web {
         /**
          * @private
          */
-        private loadImage(src: string): void {
+        private _loadInternalTexture(src: string) {
+            var request: egret.HttpRequest = new egret.HttpRequest();
+            request.responseType = egret.HttpResponseType.ARRAY_BUFFER;
+            request.open(/*RES.getVirtualUrl(resource.root + resource.url)*/src, "get");
+            request.send();
+            return new Promise((resolve, reject) => {
+                ///
+                let loader = request;
+                ////
+                let onSuccess = () => {
+                    let textureData = loader['data'] ? loader['data'] : loader['response'];
+                    resolve(textureData);
+                }
+                let onError = () => {
+                    //let e = new egret.ResourceManagerError(1001, resource.url);
+                    reject(0);
+                }
+                loader.addEventListener(egret.Event.COMPLETE, onSuccess, this);
+                loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, this);
+            });
+
             ////refactor
             let url = String(src); // assign a new string, so that the original is still available in case of fallback
             let fromData = url.substr(0, 5) === "data:";
@@ -552,7 +576,7 @@ namespace egret.web {
             ///???????
             let fallback = null;
             let texture = fallback ? fallback : new InternalTexture;//(this, InternalTexture.DATASOURCE_URL);
-            let forcedExtension = false;
+            let forcedExtension = null;
             let buffer = null;
             let _textureFormatInUse = egret.web.WebGLRenderContext.getInstance(0, 0).textureFormatInUse;//textureFormatInUse();
             //let texture = fallback ? fallback : new InternalTexture(this, InternalTexture.DATASOURCE_URL);
@@ -599,13 +623,10 @@ namespace egret.web {
                 }
             }
             ////
+            //return !!loader;
+        }
 
-
-
-
-
-
-
+        private _loadImage(src: string): void {
 
             let image = new Image();
             this.data = null;

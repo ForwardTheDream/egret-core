@@ -2196,7 +2196,9 @@ var egret;
                     request.send();
                 }
                 else {
-                    this.loadImage(url);
+                    if (!this._loadInternalTexture(url)) {
+                        this._loadImage(url);
+                    }
                 }
             };
             /**
@@ -2205,7 +2207,9 @@ var egret;
             WebImageLoader.prototype.onBlobLoaded = function (event) {
                 var blob = this.request.response;
                 this.request = undefined;
-                this.loadImage(winURL.createObjectURL(blob));
+                if (!this._loadInternalTexture(winURL.createObjectURL(blob))) {
+                    this._loadImage(winURL.createObjectURL(blob));
+                }
             };
             /**
              * @private
@@ -2217,7 +2221,27 @@ var egret;
             /**
              * @private
              */
-            WebImageLoader.prototype.loadImage = function (src) {
+            WebImageLoader.prototype._loadInternalTexture = function (src) {
+                var _this = this;
+                var request = new egret.HttpRequest();
+                request.responseType = egret.HttpResponseType.ARRAY_BUFFER;
+                request.open(/*RES.getVirtualUrl(resource.root + resource.url)*/ src, "get");
+                request.send();
+                return new Promise(function (resolve, reject) {
+                    ///
+                    var loader = request;
+                    ////
+                    var onSuccess = function () {
+                        var textureData = loader['data'] ? loader['data'] : loader['response'];
+                        resolve(textureData);
+                    };
+                    var onError = function () {
+                        //let e = new egret.ResourceManagerError(1001, resource.url);
+                        reject(0);
+                    };
+                    loader.addEventListener(egret.Event.COMPLETE, onSuccess, _this);
+                    loader.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, _this);
+                });
                 ////refactor
                 var url = String(src); // assign a new string, so that the original is still available in case of fallback
                 var fromData = url.substr(0, 5) === "data:";
@@ -2226,7 +2250,7 @@ var egret;
                 ///???????
                 var fallback = null;
                 var texture = fallback ? fallback : new InternalTexture; //(this, InternalTexture.DATASOURCE_URL);
-                var forcedExtension = false;
+                var forcedExtension = null;
                 var buffer = null;
                 var _textureFormatInUse = egret.web.WebGLRenderContext.getInstance(0, 0).textureFormatInUse; //textureFormatInUse();
                 //let texture = fallback ? fallback : new InternalTexture(this, InternalTexture.DATASOURCE_URL);
@@ -2273,6 +2297,9 @@ var egret;
                     }
                 }
                 ////
+                //return !!loader;
+            };
+            WebImageLoader.prototype._loadImage = function (src) {
                 var image = new Image();
                 this.data = null;
                 this.currentImage = image;
