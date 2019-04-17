@@ -1867,6 +1867,262 @@ var egret;
     var web;
     (function (web) {
         var winURL = window["URL"] || window["webkitURL"];
+        ///refactor
+        var _TextureLoaders = [];
+        /////
+        /**
+         * This represents the required contract to create a new type of texture loader.
+         */
+        /**
+         * Class used to store data associated with WebGL texture data for the engine
+         * This class should not be used directly
+         */
+        var InternalTexture = (function () {
+            function InternalTexture() {
+            }
+            return InternalTexture;
+        }());
+        web.InternalTexture = InternalTexture;
+        __reflect(InternalTexture.prototype, "egret.web.InternalTexture");
+        // import { KhronosTextureContainer } from "../../../Misc/khronosTextureContainer";
+        // import { Nullable } from "../../../types";
+        // import { Engine } from "../../../Engines/engine";
+        // import { InternalTexture } from "../../../Materials/Textures/internalTexture";
+        // import { IInternalTextureLoader } from "../../../Materials/Textures/internalTextureLoader";
+        // import { _TimeToken } from "../../../Instrumentation/timeToken";
+        // import { _DepthCullingState, _StencilState, _AlphaState } from "../../../States/index";
+        /**
+         * Implementation of the KTX Texture Loader.
+         * @hidden
+         */
+        var _KTXTextureLoader = (function () {
+            function _KTXTextureLoader() {
+                /**
+                 * Defines wether the loader supports cascade loading the different faces.
+                 */
+                this.supportCascades = false;
+            }
+            /**
+             * This returns if the loader support the current file information.
+             * @param extension defines the file extension of the file being loaded
+             * @param textureFormatInUse defines the current compressed format in use iun the engine
+             * @param fallback defines the fallback internal texture if any
+             * @param isBase64 defines whether the texture is encoded as a base64
+             * @param isBuffer defines whether the texture data are stored as a buffer
+             * @returns true if the loader can load the specified file
+             */
+            _KTXTextureLoader.prototype.canLoad = function (extension, textureFormatInUse, fallback, isBase64, isBuffer) {
+                if (textureFormatInUse && !isBase64 && !fallback && !isBuffer) {
+                    return true;
+                }
+                return false;
+            };
+            /**
+             * Transform the url before loading if required.
+             * @param rootUrl the url of the texture
+             * @param textureFormatInUse defines the current compressed format in use iun the engine
+             * @returns the transformed texture
+             */
+            _KTXTextureLoader.prototype.transformUrl = function (rootUrl, textureFormatInUse) {
+                var lastDot = rootUrl.lastIndexOf('.');
+                if (lastDot != -1 && rootUrl.substring(lastDot + 1) == "ktx") {
+                    // Already transformed
+                    return rootUrl;
+                }
+                return (lastDot > -1 ? rootUrl.substring(0, lastDot) : rootUrl) + textureFormatInUse;
+            };
+            /**
+             * Gets the fallback url in case the load fail. This can return null to allow the default fallback mecanism to work
+             * @param rootUrl the url of the texture
+             * @param textureFormatInUse defines the current compressed format in use iun the engine
+             * @returns the fallback texture
+             */
+            _KTXTextureLoader.prototype.getFallbackTextureUrl = function (rootUrl, textureFormatInUse) {
+                // remove the format appended to the rootUrl in the original createCubeTexture call.
+                var exp = new RegExp("" + textureFormatInUse + "$");
+                return rootUrl.replace(exp, "");
+            };
+            /**
+             * Uploads the cube texture data to the WebGl Texture. It has alreday been bound.
+             * @param data contains the texture data
+             * @param texture defines the BabylonJS internal texture
+             * @param createPolynomials will be true if polynomials have been requested
+             * @param onLoad defines the callback to trigger once the texture is ready
+             * @param onError defines the callback to trigger in case of error
+             */
+            _KTXTextureLoader.prototype.loadCubeData = function (data, texture, createPolynomials, onLoad, onError) {
+                /*
+                if (Array.isArray(data)) {
+                    return;
+                }
+    
+                // Need to invert vScale as invertY via UNPACK_FLIP_Y_WEBGL is not supported by compressed texture
+                texture._invertVScale = !texture.invertY;
+                var engine = texture.getEngine();
+                var ktx = new KhronosTextureContainer(data, 6);
+    
+                var loadMipmap = ktx.numberOfMipmapLevels > 1 && texture.generateMipMaps;
+    
+                engine._unpackFlipY(true);
+    
+                ktx.uploadLevels(texture, texture.generateMipMaps);
+    
+                texture.width = ktx.pixelWidth;
+                texture.height = ktx.pixelHeight;
+    
+                engine._setCubeMapTextureParams(loadMipmap);
+                texture.isReady = true;
+                */
+            };
+            /**
+             * Uploads the 2D texture data to the WebGl Texture. It has alreday been bound once in the callback.
+             * @param data contains the texture data
+             * @param texture defines the BabylonJS internal texture
+             * @param callback defines the method to call once ready to upload
+             */
+            _KTXTextureLoader.prototype.loadData = function (data, texture, callback) {
+                /*
+                // Need to invert vScale as invertY via UNPACK_FLIP_Y_WEBGL is not supported by compressed texture
+                texture._invertVScale = !texture.invertY;
+                var ktx = new KhronosTextureContainer(data, 1);
+    
+                callback(ktx.pixelWidth, ktx.pixelHeight, false, true, () => {
+                    ktx.uploadLevels(texture, texture.generateMipMaps);
+                }, ktx.isInvalid);
+                */
+            };
+            return _KTXTextureLoader;
+        }());
+        web._KTXTextureLoader = _KTXTextureLoader;
+        __reflect(_KTXTextureLoader.prototype, "egret.web._KTXTextureLoader", ["egret.web.IInternalTextureLoader"]);
+        // Register the loader.
+        //Engine._TextureLoaders.unshift(new _KTXTextureLoader());
+        _TextureLoaders.unshift(new _KTXTextureLoader());
+        // import { Logger } from "../Misc/logger";
+        // import { InternalTexture } from "../Materials/Textures/internalTexture";
+        /**
+         * for description see https://www.khronos.org/opengles/sdk/tools/KTX/
+         * for file layout see https://www.khronos.org/opengles/sdk/tools/KTX/file_format_spec/
+         */
+        var KhronosTextureContainer = (function () {
+            /**
+             * Creates a new KhronosTextureContainer
+             * @param arrayBuffer contents of the KTX container file
+             * @param facesExpected should be either 1 or 6, based whether a cube texture or or
+             * @param threeDExpected provision for indicating that data should be a 3D texture, not implemented
+             * @param textureArrayExpected provision for indicating that data should be a texture array, not implemented
+             */
+            function KhronosTextureContainer(
+                /** contents of the KTX container file */
+                arrayBuffer, facesExpected, threeDExpected, textureArrayExpected) {
+                this.arrayBuffer = arrayBuffer;
+                /**
+                 * If the container has been made invalid (eg. constructor failed to correctly load array buffer)
+                 */
+                this.isInvalid = false;
+                // Test that it is a ktx formatted file, based on the first 12 bytes, character representation is:
+                // '�', 'K', 'T', 'X', ' ', '1', '1', '�', '\r', '\n', '\x1A', '\n'
+                // 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A
+                var identifier = new Uint8Array(this.arrayBuffer, 0, 12);
+                if (identifier[0] !== 0xAB || identifier[1] !== 0x4B || identifier[2] !== 0x54 || identifier[3] !== 0x58 || identifier[4] !== 0x20 || identifier[5] !== 0x31 ||
+                    identifier[6] !== 0x31 || identifier[7] !== 0xBB || identifier[8] !== 0x0D || identifier[9] !== 0x0A || identifier[10] !== 0x1A || identifier[11] !== 0x0A) {
+                    this.isInvalid = true;
+                    //Logger.Error("texture missing KTX identifier");
+                    console.error("texture missing KTX identifier");
+                    return;
+                }
+                // load the reset of the header in native 32 bit uint
+                var dataSize = Uint32Array.BYTES_PER_ELEMENT;
+                var headerDataView = new DataView(this.arrayBuffer, 12, 13 * dataSize);
+                var endianness = headerDataView.getUint32(0, true);
+                var littleEndian = endianness === 0x04030201;
+                this.glType = headerDataView.getUint32(1 * dataSize, littleEndian); // must be 0 for compressed textures
+                this.glTypeSize = headerDataView.getUint32(2 * dataSize, littleEndian); // must be 1 for compressed textures
+                this.glFormat = headerDataView.getUint32(3 * dataSize, littleEndian); // must be 0 for compressed textures
+                this.glInternalFormat = headerDataView.getUint32(4 * dataSize, littleEndian); // the value of arg passed to gl.compressedTexImage2D(,,x,,,,)
+                this.glBaseInternalFormat = headerDataView.getUint32(5 * dataSize, littleEndian); // specify GL_RGB, GL_RGBA, GL_ALPHA, etc (un-compressed only)
+                this.pixelWidth = headerDataView.getUint32(6 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage2D(,,,x,,,)
+                this.pixelHeight = headerDataView.getUint32(7 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage2D(,,,,x,,)
+                this.pixelDepth = headerDataView.getUint32(8 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage3D(,,,,,x,,)
+                this.numberOfArrayElements = headerDataView.getUint32(9 * dataSize, littleEndian); // used for texture arrays
+                this.numberOfFaces = headerDataView.getUint32(10 * dataSize, littleEndian); // used for cubemap textures, should either be 1 or 6
+                this.numberOfMipmapLevels = headerDataView.getUint32(11 * dataSize, littleEndian); // number of levels; disregard possibility of 0 for compressed textures
+                this.bytesOfKeyValueData = headerDataView.getUint32(12 * dataSize, littleEndian); // the amount of space after the header for meta-data
+                // Make sure we have a compressed type.  Not only reduces work, but probably better to let dev know they are not compressing.
+                if (this.glType !== 0) {
+                    //Logger.Error("only compressed formats currently supported");
+                    console.error("only compressed formats currently supported");
+                    return;
+                }
+                else {
+                    // value of zero is an indication to generate mipmaps @ runtime.  Not usually allowed for compressed, so disregard.
+                    this.numberOfMipmapLevels = Math.max(1, this.numberOfMipmapLevels);
+                }
+                if (this.pixelHeight === 0 || this.pixelDepth !== 0) {
+                    //Logger.Error("only 2D textures currently supported");
+                    console.error("only 2D textures currently supported");
+                    return;
+                }
+                if (this.numberOfArrayElements !== 0) {
+                    //Logger.Error("texture arrays not currently supported");
+                    console.error("texture arrays not currently supported");
+                    return;
+                }
+                if (this.numberOfFaces !== facesExpected) {
+                    //Logger.Error("number of faces expected" + facesExpected + ", but found " + this.numberOfFaces);
+                    console.error("number of faces expected" + facesExpected + ", but found " + this.numberOfFaces);
+                    return;
+                }
+                // we now have a completely validated file, so could use existence of loadType as success
+                // would need to make this more elaborate & adjust checks above to support more than one load type
+                this.loadType = KhronosTextureContainer.COMPRESSED_2D;
+            }
+            /**
+             * Uploads KTX content to a Babylon Texture.
+             * It is assumed that the texture has already been created & is currently bound
+             * @hidden
+             */
+            KhronosTextureContainer.prototype.uploadLevels = function (texture, loadMipmaps) {
+                switch (this.loadType) {
+                    case KhronosTextureContainer.COMPRESSED_2D:
+                        this._upload2DCompressedLevels(texture, loadMipmaps);
+                        break;
+                    case KhronosTextureContainer.TEX_2D:
+                    case KhronosTextureContainer.COMPRESSED_3D:
+                    case KhronosTextureContainer.TEX_3D:
+                }
+            };
+            KhronosTextureContainer.prototype._upload2DCompressedLevels = function (texture, loadMipmaps) {
+                // initialize width & height for level 1
+                var dataOffset = KhronosTextureContainer.HEADER_LEN + this.bytesOfKeyValueData;
+                var width = this.pixelWidth;
+                var height = this.pixelHeight;
+                var mipmapCount = loadMipmaps ? this.numberOfMipmapLevels : 1;
+                for (var level = 0; level < mipmapCount; level++) {
+                    var imageSize = new Int32Array(this.arrayBuffer, dataOffset, 1)[0]; // size per face, since not supporting array cubemaps
+                    dataOffset += 4; //image data starts from next multiple of 4 offset. Each face refers to same imagesize field above.
+                    for (var face = 0; face < this.numberOfFaces; face++) {
+                        var byteArray = new Uint8Array(this.arrayBuffer, dataOffset, imageSize);
+                        // const engine = texture.getEngine();
+                        // engine._uploadCompressedDataToTextureDirectly(texture, this.glInternalFormat, width, height, byteArray, face, level);
+                        dataOffset += imageSize; // add size of the image for the next face/mipmap
+                        dataOffset += 3 - ((imageSize + 3) % 4); // add padding for odd sized image
+                    }
+                    width = Math.max(1.0, width * 0.5);
+                    height = Math.max(1.0, height * 0.5);
+                }
+            };
+            KhronosTextureContainer.HEADER_LEN = 12 + (13 * 4); // identifier + header elements (not including key value meta-data pairs)
+            // load types
+            KhronosTextureContainer.COMPRESSED_2D = 0; // uses a gl.compressedTexImage2D()
+            KhronosTextureContainer.COMPRESSED_3D = 1; // uses a gl.compressedTexImage3D()
+            KhronosTextureContainer.TEX_2D = 2; // uses a gl.texImage2D()
+            KhronosTextureContainer.TEX_3D = 3; // uses a gl.texImage3D()
+            return KhronosTextureContainer;
+        }());
+        web.KhronosTextureContainer = KhronosTextureContainer;
+        __reflect(KhronosTextureContainer.prototype, "egret.web.KhronosTextureContainer");
+        /////
         /**
          * @private
          * ImageLoader 类可用于加载图像（JPG、PNG 或 GIF）文件。使用 load() 方法来启动加载。被加载的图像对象数据将存储在 ImageLoader.data 属性上 。
@@ -1959,6 +2215,64 @@ var egret;
              * @private
              */
             WebImageLoader.prototype.loadImage = function (src) {
+                ////refactor
+                var url = String(src); // assign a new string, so that the original is still available in case of fallback
+                var fromData = url.substr(0, 5) === "data:";
+                var fromBlob = url.substr(0, 5) === "blob:";
+                var isBase64 = fromData && url.indexOf(";base64,") !== -1;
+                ///???????
+                var fallback = null;
+                var texture = fallback ? fallback : new InternalTexture; //(this, InternalTexture.DATASOURCE_URL);
+                var forcedExtension = false;
+                var buffer = false;
+                var _textureFormatInUse = egret.web.WebGLRenderContext.getInstance(0, 0).textureFormatInUse; //textureFormatInUse();
+                //let texture = fallback ? fallback : new InternalTexture(this, InternalTexture.DATASOURCE_URL);
+                // establish the file extension, if possible
+                var lastDot = url.lastIndexOf('.');
+                var extension = forcedExtension ? forcedExtension : (lastDot > -1 ? url.substring(lastDot).toLowerCase() : "");
+                ///???
+                if (extension === 'ktx') {
+                    extension = '';
+                }
+                ////
+                var loader = null;
+                for (var _i = 0, /*Engine.*/ _TextureLoaders_1 = _TextureLoaders; _i < _TextureLoaders_1.length; _i++) {
+                    var availableLoader = _TextureLoaders_1[_i];
+                    if (availableLoader.canLoad(extension, /*this.*/ _textureFormatInUse, fallback, isBase64, buffer ? true : false)) {
+                        loader = availableLoader;
+                        break;
+                    }
+                }
+                if (loader) {
+                    url = loader.transformUrl(url, /*this.*/ _textureFormatInUse);
+                }
+                // processing for non-image formats
+                if (loader) {
+                    var callback = function (data) {
+                        loader.loadData(data, texture, function (width, height, loadMipmap, isCompressed, done, loadFailed) {
+                            if (loadFailed) {
+                                //onInternalError("TextureLoader failed to load data");
+                            }
+                            else {
+                                /*
+                                this._prepareWebGLTexture(texture, scene, width, height, texture.invertY, !loadMipmap, isCompressed, () => {
+                                    done();
+                                    return false;
+                                }, samplingMode);
+                                */
+                            }
+                        });
+                    };
+                    if (!buffer) {
+                        // this._loadFile(url, callback, undefined, scene ? scene.offlineProvider : undefined, true, (request?: WebRequest, exception?: any) => {
+                        //     onInternalError("Unable to load " + (request ? request.responseURL : url, exception));
+                        // });
+                    }
+                    else {
+                        callback(buffer);
+                    }
+                }
+                ////
                 var image = new Image();
                 this.data = null;
                 this.currentImage = image;
@@ -5841,6 +6155,7 @@ var egret;
                 this.getWebGLContext();
                 var gl = this.context;
                 this.$maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+                //
                 this._initGLContext();
             };
             Object.defineProperty(WebGLRenderContext.prototype, "texturesSupported", {

@@ -364,6 +364,7 @@ namespace egret.web {
             let gl = this.context;
             this.$maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
+            //
             this._initGLContext();
         }
 
