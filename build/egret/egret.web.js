@@ -6098,7 +6098,6 @@ var egret;
                 // Hardware supported Compressed Textures
                 this._texturesSupported = new Array();
                 //refactor
-                //private readonly compressedTextureType = ['s3tc', 'etc1', 'pvrtc'];
                 this.currentSupportedCompressedTextureTypes = [];
                 this.$scissorState = false;
                 this.vertSize = 5;
@@ -6595,7 +6594,29 @@ var egret;
                 return texture;
             };
             WebGLRenderContext.prototype.createTextureFromCompressedData = function (data, width, height, levels, internalFormat) {
-                return null;
+                ////
+                if (true) {
+                    var checkCurrentSupportedCompressedTextureTypes = false;
+                    var currentSupportedCompressedTextureTypes = this.currentSupportedCompressedTextureTypes;
+                    for (var i = 0, length_4 = currentSupportedCompressedTextureTypes.length; i < length_4; ++i) {
+                        var ss = currentSupportedCompressedTextureTypes[i];
+                        var formats = ss.formats;
+                        for (var j = 0, length_5 = formats.length; j < length_5; ++j) {
+                            if (formats[j] === internalFormat) {
+                                checkCurrentSupportedCompressedTextureTypes = true;
+                                break;
+                            }
+                        }
+                        if (checkCurrentSupportedCompressedTextureTypes) {
+                            break;
+                        }
+                    }
+                    if (!checkCurrentSupportedCompressedTextureTypes) {
+                        //console.log('internalFormat = ' + ('0x' + internalFormat.toString(16)) + ', The current hardware does not support the corresponding compression format.');
+                        return null;
+                    }
+                }
+                //////
                 var gl = this.context;
                 var texture = gl.createTexture();
                 if (!texture) {
@@ -6632,11 +6653,6 @@ var egret;
                         bitmapData.webGLTexture = this.createTexture(bitmapData.source);
                     }
                     else if (bitmapData.format == "pvr" || bitmapData.bitmapCompressedData.length > 0) {
-                        // if (!currentCompressedTextureType) {
-                        //     currentCompressedTextureType = getSupportedCompressedTextureType(
-                        //         egret.web.WebGLRenderContext.getInstance(0, 0).context
-                        //     );
-                        // }
                         var bitmapCompressedData = bitmapData.bitmapCompressedData[0];
                         bitmapData.webGLTexture = this.createTextureFromCompressedData(bitmapCompressedData.byteArray, bitmapCompressedData.width, bitmapCompressedData.height, bitmapCompressedData.level, bitmapCompressedData.glInternalFormat
                         //bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format
@@ -7686,8 +7702,8 @@ var egret;
                     if (renderBufferPool.length > 6) {
                         renderBufferPool.length = 6;
                     }
-                    var length_4 = renderBufferPool.length;
-                    for (var i = 0; i < length_4; i++) {
+                    var length_6 = renderBufferPool.length;
+                    for (var i = 0; i < length_6; i++) {
                         renderBufferPool[i].resize(0, 0);
                     }
                 }
@@ -7750,8 +7766,8 @@ var egret;
                 }
                 var children = displayObject.$children;
                 if (children) {
-                    var length_5 = children.length;
-                    for (var i = 0; i < length_5; i++) {
+                    var length_7 = children.length;
+                    for (var i = 0; i < length_7; i++) {
                         var child = children[i];
                         var offsetX2 = void 0;
                         var offsetY2 = void 0;
@@ -8198,8 +8214,8 @@ var egret;
                 }
                 var children = displayObject.$children;
                 if (children) {
-                    var length_6 = children.length;
-                    for (var i = 0; i < length_6; i++) {
+                    var length_8 = children.length;
+                    for (var i = 0; i < length_8; i++) {
                         var child = children[i];
                         switch (child.$renderMode) {
                             case 1 /* NONE */:
