@@ -607,6 +607,7 @@ namespace egret.web {
             return loader;
         }
         private _loadInternalTexture(src: string) {
+            return null;
             const interalLoader = this._getInternalTextureLoader(src);
             if (!interalLoader) {
                 return false;

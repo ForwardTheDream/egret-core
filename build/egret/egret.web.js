@@ -2281,6 +2281,7 @@ var egret;
             };
             WebImageLoader.prototype._loadInternalTexture = function (src) {
                 var _this = this;
+                return null;
                 var interalLoader = this._getInternalTextureLoader(src);
                 if (!interalLoader) {
                     return false;
