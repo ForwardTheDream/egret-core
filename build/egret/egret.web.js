@@ -6097,6 +6097,9 @@ var egret;
                 this._webGLVersion = 1.0;
                 // Hardware supported Compressed Textures
                 this._texturesSupported = new Array();
+                //refactor
+                //private readonly compressedTextureType = ['s3tc', 'etc1', 'pvrtc'];
+                this.currentSupportedCompressedTextureTypes = [];
                 this.$scissorState = false;
                 this.vertSize = 5;
                 this.surface = createCanvas(width, height);
@@ -6221,6 +6224,38 @@ var egret;
                 }
                 this.onResize();
             };
+            WebGLRenderContext.prototype.getSupportedCompressedTextureTypes = function (gl, compressedTextureType) {
+                var result = [];
+                for (var i = 0, length_3 = compressedTextureType.length; i < length_3; ++i) {
+                    var targetCompressedTextureType = compressedTextureType[i];
+                    var rs = this.getSupportedCompressedTextureType(gl, targetCompressedTextureType);
+                    if (rs) {
+                        result.push(rs);
+                    }
+                }
+                return result;
+            };
+            WebGLRenderContext.prototype.getSupportedCompressedTextureType = function (gl, targetCompressedTextureType) {
+                var availableExtensions = gl.getSupportedExtensions();
+                for (var i = 0; i < availableExtensions.length; ++i) {
+                    if (availableExtensions[i].indexOf(targetCompressedTextureType) !== -1) {
+                        var extension = gl.getExtension(availableExtensions[i]);
+                        var formats = gl.getParameter(gl.COMPRESSED_TEXTURE_FORMATS);
+                        if (true) {
+                            egret.log(formats);
+                            for (var key in extension) {
+                                egret.log(key, extension[key], '0x' + extension[key].toString(16));
+                            }
+                        }
+                        return {
+                            type: targetCompressedTextureType,
+                            extension: extension,
+                            formats: formats
+                        };
+                    }
+                }
+                return null;
+            };
             WebGLRenderContext.prototype.initWebGL = function () {
                 this.onResize();
                 this.surface.addEventListener("webglcontextlost", this.handleContextLost.bind(this), false);
@@ -6234,8 +6269,8 @@ var egret;
             Object.defineProperty(WebGLRenderContext.prototype, "texturesSupported", {
                 //refactor
                 /**
-             * Gets the list of texture formats supported
-             */
+                 * Gets the list of texture formats supported
+                 */
                 get: function () {
                     return this._texturesSupported;
                 },
@@ -6405,6 +6440,10 @@ var egret;
                 if (this._caps.etc1) {
                     this.texturesSupported.push('-etc1.ktx');
                 }
+                if (true) {
+                    console.log('texturesSupported = ' + this.texturesSupported);
+                }
+                this.currentSupportedCompressedTextureTypes = this.getSupportedCompressedTextureTypes(this.context, ['s3tc', 'etc1', 'pvrtc']);
                 if (this._gl.getShaderPrecisionFormat) {
                     var vertex_highp = this._gl.getShaderPrecisionFormat(this._gl.VERTEX_SHADER, this._gl.HIGH_FLOAT);
                     var fragment_highp = this._gl.getShaderPrecisionFormat(this._gl.FRAGMENT_SHADER, this._gl.HIGH_FLOAT);
@@ -6421,6 +6460,7 @@ var egret;
                 // for (let slot = 0; slot < this._maxSimultaneousTextures; slot++) {
                 //     this._nextFreeTextureSlots.push(slot);
                 // }
+                /////
             };
             /**
             * Set the compressed texture format to use, based on the formats you have, and the formats
@@ -6442,21 +6482,19 @@ var egret;
             * Current families are astc, dxt, pvrtc, etc2, & etc1.
             * @returns The extension selected.
             */
-            /*
-             public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
-                 for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
-                     for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
-                         if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
-                             return this._textureFormatInUse = this._texturesSupported[i];
-                         }
-                     }
-                 }
-                 // actively set format to nothing, to allow this to be called more than once
-                 // and possibly fail the 2nd time
-                 this._textureFormatInUse = null;
-                 return null;
-             }
-             */
+            WebGLRenderContext.prototype.setTextureFormatToUse = function (formatsAvailable) {
+                for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
+                    for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
+                        if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
+                            return this._textureFormatInUse = this._texturesSupported[i];
+                        }
+                    }
+                }
+                // actively set format to nothing, to allow this to be called more than once
+                // and possibly fail the 2nd time
+                this._textureFormatInUse = null;
+                return null;
+            };
             WebGLRenderContext.prototype.handleContextLost = function () {
                 this.contextLost = true;
             };
@@ -6594,6 +6632,11 @@ var egret;
                         bitmapData.webGLTexture = this.createTexture(bitmapData.source);
                     }
                     else if (bitmapData.format == "pvr" || bitmapData.bitmapCompressedData.length > 0) {
+                        // if (!currentCompressedTextureType) {
+                        //     currentCompressedTextureType = getSupportedCompressedTextureType(
+                        //         egret.web.WebGLRenderContext.getInstance(0, 0).context
+                        //     );
+                        // }
                         var bitmapCompressedData = bitmapData.bitmapCompressedData[0];
                         bitmapData.webGLTexture = this.createTextureFromCompressedData(bitmapCompressedData.byteArray, bitmapCompressedData.width, bitmapCompressedData.height, bitmapCompressedData.level, bitmapCompressedData.glInternalFormat
                         //bitmapData.source.pvrtcData, bitmapData.width, bitmapData.height, bitmapData.source.mipmapsCount, bitmapData.source.format
@@ -7643,8 +7686,8 @@ var egret;
                     if (renderBufferPool.length > 6) {
                         renderBufferPool.length = 6;
                     }
-                    var length_3 = renderBufferPool.length;
-                    for (var i = 0; i < length_3; i++) {
+                    var length_4 = renderBufferPool.length;
+                    for (var i = 0; i < length_4; i++) {
                         renderBufferPool[i].resize(0, 0);
                     }
                 }
@@ -7707,8 +7750,8 @@ var egret;
                 }
                 var children = displayObject.$children;
                 if (children) {
-                    var length_4 = children.length;
-                    for (var i = 0; i < length_4; i++) {
+                    var length_5 = children.length;
+                    for (var i = 0; i < length_5; i++) {
                         var child = children[i];
                         var offsetX2 = void 0;
                         var offsetY2 = void 0;
@@ -8155,8 +8198,8 @@ var egret;
                 }
                 var children = displayObject.$children;
                 if (children) {
-                    var length_5 = children.length;
-                    for (var i = 0; i < length_5; i++) {
+                    var length_6 = children.length;
+                    for (var i = 0; i < length_6; i++) {
                         var child = children[i];
                         switch (child.$renderMode) {
                             case 1 /* NONE */:

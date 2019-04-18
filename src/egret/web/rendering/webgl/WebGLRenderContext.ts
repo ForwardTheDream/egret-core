@@ -29,6 +29,13 @@
 
 namespace egret.web {
 
+    ///
+    export interface SupportedCompressedTextureType {
+        type: string,
+        formats: Uint32Array,
+        extension: any
+    }
+
     /**
      * 创建一个canvas。
      */
@@ -122,11 +129,6 @@ namespace egret.web {
             COMPLETION_STATUS_KHR: number;
         };
     }
-
-
-
-
-
 
     /**
      * @private
@@ -352,6 +354,42 @@ namespace egret.web {
         /** @hidden */
         private _textureFormatInUse: Nullable<string>;
 
+        //refactor
+        //private readonly compressedTextureType = ['s3tc', 'etc1', 'pvrtc'];
+        public currentSupportedCompressedTextureTypes: SupportedCompressedTextureType[] = [];
+        private getSupportedCompressedTextureTypes(gl: WebGLRenderingContext, compressedTextureType: string[]): SupportedCompressedTextureType[] {
+            const result: SupportedCompressedTextureType[] = [];
+            for (let i = 0, length = compressedTextureType.length; i < length; ++i) {
+                const targetCompressedTextureType = compressedTextureType[i];
+                const rs = this.getSupportedCompressedTextureType(gl, targetCompressedTextureType);
+                if (rs) {
+                    result.push(rs); 
+                }
+            }
+            return result;
+        }
+
+        private getSupportedCompressedTextureType(gl: WebGLRenderingContext, targetCompressedTextureType: string): SupportedCompressedTextureType {
+            const availableExtensions = gl.getSupportedExtensions();
+            for (let i = 0; i < availableExtensions.length; ++i) {
+                if (availableExtensions[i].indexOf(targetCompressedTextureType) !== -1) {
+                    const extension = gl.getExtension(availableExtensions[i]);
+                    const formats = gl.getParameter(gl.COMPRESSED_TEXTURE_FORMATS);
+                    if (DEBUG) {
+                        egret.log(formats);
+                        for (const key in extension) {
+                            egret.log(key, extension[key], '0x' + extension[key].toString(16));
+                        }
+                    }
+                    return {
+                        type: targetCompressedTextureType,
+                        extension: extension,
+                        formats: formats
+                    }
+                }
+            }
+            return null;
+        }
 
         private initWebGL(): void {
             this.onResize();
@@ -370,8 +408,8 @@ namespace egret.web {
 
         //refactor
         /**
-     * Gets the list of texture formats supported
-     */
+         * Gets the list of texture formats supported
+         */
         public get texturesSupported(): Array<string> {
             return this._texturesSupported;
         }
@@ -550,6 +588,12 @@ namespace egret.web {
             if (this._caps.pvrtc) { this.texturesSupported.push('-pvrtc.ktx'); }
             if (this._caps.etc2) { this.texturesSupported.push('-etc2.ktx'); }
             if (this._caps.etc1) { this.texturesSupported.push('-etc1.ktx'); }
+            if (DEBUG) {
+                console.log('texturesSupported = ' + this.texturesSupported);
+            }
+            this.currentSupportedCompressedTextureTypes = this.getSupportedCompressedTextureTypes(this.context, ['s3tc', 'etc1', 'pvrtc']);
+
+
 
             if (this._gl.getShaderPrecisionFormat) {
                 var vertex_highp = this._gl.getShaderPrecisionFormat(this._gl.VERTEX_SHADER, this._gl.HIGH_FLOAT);
@@ -570,6 +614,9 @@ namespace egret.web {
             // for (let slot = 0; slot < this._maxSimultaneousTextures; slot++) {
             //     this._nextFreeTextureSlots.push(slot);
             // }
+
+
+            /////
         }
 
 
@@ -593,21 +640,20 @@ namespace egret.web {
         * Current families are astc, dxt, pvrtc, etc2, & etc1.
         * @returns The extension selected.
         */
-        /*
-         public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
-             for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
-                 for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
-                     if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
-                         return this._textureFormatInUse = this._texturesSupported[i];
-                     }
-                 }
-             }
-             // actively set format to nothing, to allow this to be called more than once
-             // and possibly fail the 2nd time
-             this._textureFormatInUse = null;
-             return null;
-         }
-         */
+        public setTextureFormatToUse(formatsAvailable: Array<string>): Nullable<string> {
+            for (var i = 0, len1 = this.texturesSupported.length; i < len1; i++) {
+                for (var j = 0, len2 = formatsAvailable.length; j < len2; j++) {
+                    if (this._texturesSupported[i] === formatsAvailable[j].toLowerCase()) {
+                        return this._textureFormatInUse = this._texturesSupported[i];
+                    }
+                }
+            }
+            // actively set format to nothing, to allow this to be called more than once
+            // and possibly fail the 2nd time
+            this._textureFormatInUse = null;
+            return null;
+        }
+
 
         private handleContextLost() {
             this.contextLost = true;
@@ -766,6 +812,11 @@ namespace egret.web {
                     bitmapData.webGLTexture = this.createTexture(bitmapData.source);
                 }
                 else if (bitmapData.format == "pvr" || bitmapData.bitmapCompressedData.length > 0) {//todo 需要支持其他格式
+                    // if (!currentCompressedTextureType) {
+                    //     currentCompressedTextureType = getSupportedCompressedTextureType(
+                    //         egret.web.WebGLRenderContext.getInstance(0, 0).context
+                    //     );
+                    // }
                     const bitmapCompressedData = bitmapData.bitmapCompressedData[0];
                     bitmapData.webGLTexture = this.createTextureFromCompressedData(
                         bitmapCompressedData.byteArray,
