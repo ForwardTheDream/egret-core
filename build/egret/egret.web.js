@@ -6612,7 +6612,13 @@ var egret;
                         }
                     }
                     if (!checkCurrentSupportedCompressedTextureTypes) {
-                        //console.log('internalFormat = ' + ('0x' + internalFormat.toString(16)) + ', The current hardware does not support the corresponding compression format.');
+                        /*
+                        console.log('internalFormat = ' + internalFormat + ':' + ('0x' + internalFormat.toString(16)) + ', the current hardware does not support the corresponding compression format.');
+                        for (let i = 0, length = currentSupportedCompressedTextureTypes.length; i < length; ++i) {
+                            const ss = currentSupportedCompressedTextureTypes[i];
+                            egret.log('type = ' + ss.type + ', formats = ' + ss.formats);
+                        }
+                        */
                         return null;
                     }
                 }
